@@ -1,5 +1,5 @@
 {
-  "name": "Cloudflare Poker Admin",
+  "name": "관리자페이지-텍사스 홀덤 0323",
   "description": "A comprehensive poker management system with multi-language support (KO, EN, ZH), built with Cloudflare Workers, D1, and React.",
   "requestFramePermissions": []
 }
