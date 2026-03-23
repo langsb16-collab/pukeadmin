@@ -1,0 +1,66 @@
+{
+  "entities": {
+    "Tournament": {
+      "title": "Tournament",
+      "description": "A Texas Hold'em tournament.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "buyIn": { "type": "number" },
+        "status": { "type": "string", "enum": ["upcoming", "active", "completed", "cancelled"] },
+        "maxPlayers": { "type": "number" },
+        "currentPlayers": { "type": "number" },
+        "prizePool": { "type": "number" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "date", "buyIn", "status"]
+    },
+    "Player": {
+      "title": "Player",
+      "description": "A poker player.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "totalWinnings": { "type": "number" },
+        "tournamentsPlayed": { "type": "number" }
+      },
+      "required": ["name"]
+    },
+    "Registration": {
+      "title": "Registration",
+      "description": "A player's registration for a tournament.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "tournamentId": { "type": "string" },
+        "playerId": { "type": "string" },
+        "playerName": { "type": "string" },
+        "status": { "type": "string", "enum": ["registered", "paid", "checked-in", "eliminated"] },
+        "rank": { "type": "number" },
+        "winnings": { "type": "number" },
+        "registeredAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["tournamentId", "playerId", "status"]
+    }
+  },
+  "firestore": {
+    "/tournaments/{tournamentId}": {
+      "schema": "Tournament",
+      "description": "Collection of tournaments."
+    },
+    "/players/{playerId}": {
+      "schema": "Player",
+      "description": "Collection of players."
+    },
+    "/tournaments/{tournamentId}/registrations/{registrationId}": {
+      "schema": "Registration",
+      "description": "Player registrations for a specific tournament."
+    }
+  }
+}

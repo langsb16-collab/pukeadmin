@@ -1,0 +1,5 @@
+{
+  "name": "Cloudflare Poker Admin",
+  "description": "A comprehensive poker management system with multi-language support (KO, EN, ZH), built with Cloudflare Workers, D1, and React.",
+  "requestFramePermissions": []
+}
