@@ -1,0 +1,15 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "puke365admin",
+  "compatibility_date": "2024-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "pages_build_output_dir": "./dist",
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "puke365-admin-db",
+      "database_id": "2c724e24-4674-4776-8a51-61e4e41ab73c"
+    }
+  ]
+}
