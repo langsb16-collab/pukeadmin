@@ -605,6 +605,14 @@ app.get('/api/admin/partner-finance', async c => {
   } catch(e:any){ return ok(c,[]) }
 })
 
+// 파트너 입출금 내역 삭제
+app.delete('/api/admin/partner-finance/:id', async c => {
+  try {
+    await c.env.DB.prepare('DELETE FROM partner_finance WHERE id=?').bind(c.req.param('id')).run()
+    return ok(c,{success:true})
+  } catch(e:any){ return err(c,e.message,500) }
+})
+
 // 회원 입출금 내역 (관리자용 - recharge+exchange 통합)
 app.get('/api/admin/user-finance', async c => {
   try {

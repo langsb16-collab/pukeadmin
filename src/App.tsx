@@ -107,6 +107,7 @@ export default function App() {
   const prevPendingRecharge = useRef(-1);  // -1 = 초기 미로드 상태
   const prevPendingExchange = useRef(-1);
   const alertIntervalRef = useRef<any>(null);
+  const audioCtxRef = useRef<AudioContext|null>(null);
   const [alertBanner, setAlertBanner] = useState<string|null>(null);
 
   // 파트너 모달
@@ -135,7 +136,10 @@ export default function App() {
   const [assigningBot, setAssigningBot] = useState<number|null>(null);
   const [selectedRoom, setSelectedRoom] = useState<string>("");
   const [botAddModal, setBotAddModal] = useState(false);
-  const [botForm, setBotForm] = useState({name:"",difficulty:"medium",style:"balanced",chips:"50000"});
+  const [botForm, setBotForm] = useState({name:"",difficulty:"medium",style:"balanced",chips:"50000",room:""});
+  // 파트너파이낸스 액션 모달
+  const [pfModal, setPfModal] = useState<{record:PartnerFinance,mode:'charge'|'exchange'}|null>(null);
+  const [pfAmount, setPfAmount] = useState("");
   const [roomAddModal, setRoomAddModal] = useState(false);
   const [roomForm, setRoomForm] = useState({name:"",type:"tournament",buy_in_gems:"100000",max_players:"9",blinds:"100/200",visibility:"public",password:""});
   const [rejectModal, setRejectModal] = useState<{type:'recharge'|'exchange',id:number}|null>(null);
@@ -153,10 +157,22 @@ export default function App() {
     }
   }, []);
 
+  // AudioContext 초기화 (로그인 클릭 시 호출 → 브라우저 autoplay 정책 해제)
+  const initAudioCtx = useCallback(() => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
+  }, []);
+
   // 띵동 사운드 재생 (Web Audio API)
   const playDingDong = useCallback(() => {
     try {
-      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const ctx = audioCtxRef.current || new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioCtxRef.current = ctx;
+      if (ctx.state === 'suspended') { ctx.resume(); }
       const playTone = (freq:number, start:number, dur:number) => {
         const o = ctx.createOscillator();
         const g = ctx.createGain();
@@ -198,7 +214,8 @@ export default function App() {
       // 새 대기 발생(또는 첫 로드에 이미 pending 있음) → 즉시 띵동
       const isFirstLoad = prevPendingRecharge.current === -1;
       const isNewAlert = newRecharge > prevPendingRecharge.current || newExchange > prevPendingExchange.current;
-      if (hasPending && !isFirstLoad && isNewAlert) {
+      // 첫 로드 포함 pending 있으면 즉시 소리
+      if (hasPending && (isFirstLoad || isNewAlert)) {
         playDingDong();
       }
       // pending 있으면 배너 갱신 + 5분 반복 interval 유지
@@ -238,6 +255,7 @@ export default function App() {
 
   const handleLogin = async (e:any) => {
     e.preventDefault(); setLoading(true); setLoginError("");
+    initAudioCtx(); // 사용자 클릭 시점에 AudioContext 활성화
     try {
       const res = await axios.post(`${API}/api/admin/login`,{username,password});
       if (res.data.success) {
@@ -296,10 +314,52 @@ export default function App() {
   };
 
   // ── 봇 추가
+  // ── 파트너파이낸스 액션 핸들러
+  const handlePfCharge = async () => {
+    if (!pfModal||!pfAmount) return;
+    const amt = parseInt(pfAmount.replace(/,/g,''))||0;
+    if (amt<=0) return;
+    // 파트너 이름으로 파트너 목록에서 id 찾기
+    const partner = partners.find(p=>p.name===pfModal.record.partner_name);
+    if (!partner) { alert('파트너를 찾을 수 없습니다'); return; }
+    await axios.post(`${API}/api/admin/partners/charge`,{id:partner.id,amount:amt});
+    setPfModal(null); setPfAmount(""); fetchAll();
+  };
+  const handlePfExchange = async () => {
+    if (!pfModal||!pfAmount) return;
+    const amt = parseInt(pfAmount.replace(/,/g,''))||0;
+    if (amt<=0) return;
+    const partner = partners.find(p=>p.name===pfModal.record.partner_name);
+    if (!partner) { alert('파트너를 찾을 수 없습니다'); return; }
+    await axios.post(`${API}/api/admin/partners/deduct`,{id:partner.id,amount:amt});
+    setPfModal(null); setPfAmount(""); fetchAll();
+  };
+  const handlePfDelete = async (record:PartnerFinance) => {
+    if (!window.confirm(t.pfConfirmDelete)) return;
+    try {
+      await axios.delete(`${API}/api/admin/partner-finance/${record.id}`);
+    } catch(_){
+      // API 없을 시 로컬에서만 제거
+      setPartnerFinance(prev=>prev.filter(f=>f.id!==record.id));
+      return;
+    }
+    fetchAll();
+  };
+
   const handleAddBot = async () => {
     if (!botForm.name) return;
-    await axios.post(`${API}/api/admin/bots`,{...botForm,chips:parseInt(botForm.chips)||50000});
-    setBotAddModal(false); setBotForm({name:"",difficulty:"medium",style:"balanced",chips:"50000"}); fetchAll();
+    await axios.post(`${API}/api/admin/bots`,{...botForm,chips:parseInt(botForm.chips)||50000,room:botForm.room||undefined});
+    // room이 지정된 경우 자동으로 배정
+    if (botForm.room) {
+      try {
+        const botsRes = await axios.get(`${API}/api/admin/bots`);
+        const newBot = botsRes.data?.find?.((b:any)=>b.name===botForm.name);
+        if (newBot) {
+          await axios.post(`${API}/api/admin/bot/assign`,{botId:newBot.id,gameId:botForm.room});
+        }
+      } catch(_){}
+    }
+    setBotAddModal(false); setBotForm({name:"",difficulty:"medium",style:"balanced",chips:"50000",room:""}); fetchAll();
   };
   // ── 봇 삭제
   const handleDeleteBot = async (botId:number) => {
@@ -932,7 +992,7 @@ export default function App() {
           {activeTab==="bots" && (
             <motion.div key="bots" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} className="space-y-4">
               <div className="flex justify-end">
-                <button onClick={()=>{ setBotAddModal(true); setBotForm({name:"",difficulty:"medium",style:"balanced",chips:"50000"}); }}
+                <button onClick={()=>{ setBotAddModal(true); setBotForm({name:"",difficulty:"medium",style:"balanced",chips:"50000",room:""}); }}
                   className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-xl text-sm">
                   <PlusCircle size={16}/>{t.addBot}
                 </button>
@@ -963,7 +1023,7 @@ export default function App() {
                               <>
                                 <select value={selectedRoom} onChange={e=>setSelectedRoom(e.target.value)}
                                   className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs outline-none focus:ring-1 focus:ring-emerald-500">
-                                  <option value="">방 선택</option>
+                                  <option value="">{t.selectRoomPlaceholder}</option>
                                   {gameRooms.filter(r=>r.status==='open').map(r=>(
                                     <option key={r.id} value={r.id}>{r.name}</option>
                                   ))}
@@ -1143,21 +1203,37 @@ export default function App() {
           {activeTab==="partnerFinance" && (
             <motion.div key="partnerFinance" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}}>
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[600px]">
+                <table className="w-full text-left border-collapse min-w-[700px]">
                   <thead><tr className="bg-zinc-800/50 border-b border-zinc-800">
-                    {[t.colPartner,t.colType,t.colAmount,t.colStatus,t.colDate].map(h=><th key={h} className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">{h}</th>)}
+                    {[t.colPartner,t.colType,t.colAmount,t.colStatus,t.colDate,t.colPFAction].map(h=><th key={h} className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">{h}</th>)}
                   </tr></thead>
                   <tbody>
                     {partnerFinance.map(f=>(
                       <tr key={f.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/20">
                         <td className="px-5 py-3 font-medium">{f.partner_name}</td>
-                        <td className="px-5 py-3"><span className={cn("px-2 py-0.5 rounded text-[10px] font-bold",f.type==='deposit'?"bg-emerald-400/10 text-emerald-400":"bg-amber-400/10 text-amber-400")}>{f.type==='deposit'?'충전':'출금'}</span></td>
-                        <td className="px-5 py-3 font-mono text-sm">{f.type==='deposit'?'+':'-'}{f.amount.toLocaleString()}원</td>
-                        <td className="px-5 py-3"><span className={cn("px-2 py-0.5 rounded text-[10px] font-bold",f.status==='approved'?"bg-emerald-400/10 text-emerald-400":"bg-amber-400/10 text-amber-400")}>{f.status==='approved'?'완료':'대기'}</span></td>
+                        <td className="px-5 py-3"><span className={cn("px-2 py-0.5 rounded text-[10px] font-bold",f.type==='deposit'?"bg-emerald-400/10 text-emerald-400":"bg-amber-400/10 text-amber-400")}>{f.type==='deposit'?t.typeDeposit:t.typeWithdraw}</span></td>
+                        <td className="px-5 py-3 font-mono text-sm">{f.type==='deposit'?'+':'-'}{f.amount.toLocaleString()}{t.wonUnit}</td>
+                        <td className="px-5 py-3"><span className={cn("px-2 py-0.5 rounded text-[10px] font-bold",f.status==='approved'?"bg-emerald-400/10 text-emerald-400":"bg-amber-400/10 text-amber-400")}>{f.status==='approved'?t.statusCompleted:t.statusPending}</span></td>
                         <td className="px-5 py-3 text-zinc-500 text-sm">{new Date(f.created_at).toLocaleString('ko-KR',{year:'2-digit',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})}</td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <button onClick={()=>{setPfModal({record:f,mode:'charge'});setPfAmount("");}}
+                              className="px-2.5 py-1 text-[11px] font-bold bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/30 rounded-lg transition-all whitespace-nowrap">
+                              {t.pfChargeBtn}
+                            </button>
+                            <button onClick={()=>{setPfModal({record:f,mode:'exchange'});setPfAmount("");}}
+                              className="px-2.5 py-1 text-[11px] font-bold bg-amber-500/15 text-amber-400 hover:bg-amber-500/30 rounded-lg transition-all whitespace-nowrap">
+                              {t.pfExchangeBtn}
+                            </button>
+                            <button onClick={()=>handlePfDelete(f)}
+                              className="px-2.5 py-1 text-[11px] font-bold bg-red-500/15 text-red-400 hover:bg-red-500/30 rounded-lg transition-all whitespace-nowrap">
+                              {t.pfDeleteBtn}
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
-                    {partnerFinance.length===0&&<tr><td colSpan={5} className="text-center py-12 text-zinc-600">{t.noPartnerFinance}</td></tr>}
+                    {partnerFinance.length===0&&<tr><td colSpan={6} className="text-center py-12 text-zinc-600">{t.noPartnerFinance}</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1673,6 +1749,56 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* ── 파트너파이낸스 충전/환전 모달 ── */}
+      <AnimatePresence>
+        {pfModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0.9}}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-lg flex items-center gap-2">
+                  {pfModal.mode==='charge'
+                    ? <><span className="text-emerald-400 text-xl">+</span>{t.pfChargeModalTitle}</>
+                    : <><span className="text-amber-400 text-xl">-</span>{t.pfExchangeModalTitle}</>}
+                </h3>
+                <button onClick={()=>setPfModal(null)} className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded-lg"><X size={18}/></button>
+              </div>
+              <div className="mb-4 p-3 bg-zinc-800/50 rounded-xl text-sm text-zinc-400">
+                <span className="font-bold text-zinc-200">{pfModal.record.partner_name}</span>
+                <span className="mx-2">·</span>
+                <span className={pfModal.record.type==='deposit'?"text-emerald-400":"text-amber-400"}>
+                  {pfModal.record.type==='deposit'?t.typeDeposit:t.typeWithdraw}
+                </span>
+                <span className="mx-2">·</span>
+                <span className="font-mono">{pfModal.record.amount.toLocaleString()}{t.wonUnit}</span>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{t.pfAmountLabel}</label>
+                  <input type="number" placeholder={t.pfAmountPlaceholder} value={pfAmount}
+                    onChange={e=>setPfAmount(e.target.value)}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500/50 outline-none text-sm"
+                    autoFocus/>
+                </div>
+              </div>
+              <div className="flex gap-3 mt-5">
+                {pfModal.mode==='charge'
+                  ? <button onClick={handlePfCharge} disabled={!pfAmount||parseInt(pfAmount)<=0}
+                      className="flex-1 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold py-3 rounded-xl disabled:opacity-30 transition-all">
+                      {t.pfConfirmCharge}
+                    </button>
+                  : <button onClick={handlePfExchange} disabled={!pfAmount||parseInt(pfAmount)<=0}
+                      className="flex-1 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold py-3 rounded-xl disabled:opacity-30 transition-all">
+                      {t.pfConfirmExchange}
+                    </button>
+                }
+                <button onClick={()=>setPfModal(null)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 font-bold py-3 rounded-xl">{t.cancel}</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* ── 로봇 추가 모달 ── */}
       <AnimatePresence>
         {botAddModal && (
@@ -1694,18 +1820,18 @@ export default function App() {
                   <label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{t.botDifficultyLabel}</label>
                   <select value={botForm.difficulty} onChange={e=>setBotForm(p=>({...p,difficulty:e.target.value}))}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 outline-none text-sm">
-                    <option value="easy">easy</option>
-                    <option value="medium">medium</option>
-                    <option value="hard">hard</option>
+                    <option value="easy">{t.botDiffEasy}</option>
+                    <option value="medium">{t.botDiffMedium}</option>
+                    <option value="hard">{t.botDiffHard}</option>
                   </select>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{t.botStyleLabel}</label>
                   <select value={botForm.style} onChange={e=>setBotForm(p=>({...p,style:e.target.value}))}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 outline-none text-sm">
-                    <option value="balanced">balanced</option>
-                    <option value="aggressive">aggressive</option>
-                    <option value="conservative">conservative</option>
+                    <option value="balanced">{t.botStyleBalanced}</option>
+                    <option value="aggressive">{t.botStyleAggressive}</option>
+                    <option value="conservative">{t.botStyleConservative}</option>
                   </select>
                 </div>
                 <div>
@@ -1713,6 +1839,16 @@ export default function App() {
                   <input type="number" placeholder="50000" value={botForm.chips}
                     onChange={e=>setBotForm(p=>({...p,chips:e.target.value}))}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500/50 outline-none text-sm"/>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{t.botRoomLabel}</label>
+                  <select value={botForm.room} onChange={e=>setBotForm(p=>({...p,room:e.target.value}))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 outline-none text-sm text-zinc-300">
+                    <option value="">{t.botRoomPlaceholder}</option>
+                    {gameRooms.filter(r=>r.status==='open').map(r=>(
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div className="flex gap-3 mt-5">
