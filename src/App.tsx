@@ -17,20 +17,20 @@ function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 const API = "";  // 같은 Origin – 상대경로
 
 // ─── 설정키 다국어 레이블 맵 ───────────────────────────────────────
-const SETTING_LABELS: Record<string, { ko: string; en: string; desc?: string }> = {
-  announcement_ko:       { ko: "공지 (한국어)",        en: "Announcement (KO)",       desc: "한국어 공지사항 텍스트" },
-  announcement_en:       { ko: "공지 (영어)",          en: "Announcement (EN)",       desc: "영어 공지사항 텍스트" },
-  announcement_zh:       { ko: "공지 (중국어)",        en: "Announcement (ZH)",       desc: "중국어 공지사항 텍스트" },
-  free_game_limit:       { ko: "무료게임 한도",         en: "Free Game Limit",          desc: "신규 가입 시 제공 무료 게임 수" },
-  gem_rate:              { ko: "젬 환율",              en: "Gem Rate",                 desc: "KRW 1원 = N 젬" },
-  maintenance:           { ko: "점검 모드",             en: "Maintenance Mode",         desc: "true 설정 시 게임사이트 점검 처리" },
-  max_bet:               { ko: "최대 베팅",             en: "Max Bet",                  desc: "1회 최대 베팅 금액" },
-  max_players_per_table: { ko: "테이블 최대 인원",     en: "Max Players/Table",        desc: "테이블당 최대 플레이어" },
-  min_bet:               { ko: "최소 베팅",             en: "Min Bet",                  desc: "1회 최소 베팅 금액" },
-  min_exchange:          { ko: "최소 환전금액",         en: "Min Exchange (gems)",      desc: "교환 신청 최소 젬 수량" },
-  min_recharge:          { ko: "최소 충전금액",         en: "Min Recharge (KRW)",       desc: "충전 신청 최소 원화" },
-  rake_percent:          { ko: "수수료율 (%)",           en: "Rake (%)",                 desc: "게임 판당 수수료 퍼센트" },
-  game_fee_percent:      { ko: "게임 수수료 (%)",        en: "Game Fee (%)",             desc: "게임 1판 총 베팅금액 기준 플랫폼 수수료 (1~20%)" },
+const SETTING_LABELS: Record<string, { ko: string; en: string; zh: string; desc_ko: string; desc_en: string; desc_zh: string }> = {
+  announcement_ko:       { ko: "공지 (한국어)",      en: "Announcement (KO)",     zh: "公告（韩语）",       desc_ko: "한국어 공지사항 텍스트",          desc_en: "Korean announcement text",              desc_zh: "韩语公告文本" },
+  announcement_en:       { ko: "공지 (영어)",        en: "Announcement (EN)",     zh: "公告（英语）",       desc_ko: "영어 공지사항 텍스트",            desc_en: "English announcement text",             desc_zh: "英语公告文本" },
+  announcement_zh:       { ko: "공지 (중국어)",      en: "Announcement (ZH)",     zh: "公告（中文）",       desc_ko: "중국어 공지사항 텍스트",          desc_en: "Chinese announcement text",             desc_zh: "中文公告文本" },
+  free_game_limit:       { ko: "무료게임 한도",       en: "Free Game Limit",       zh: "免费游戏限制",       desc_ko: "신규 가입 시 제공 무료 게임 수",  desc_en: "Free games given to new members",       desc_zh: "新会员赠送免费游戏次数" },
+  gem_rate:              { ko: "젬 환율",            en: "Gem Rate",              zh: "筹码汇率",          desc_ko: "KRW 1원 = N 젬",               desc_en: "KRW 1 = N Gems",                        desc_zh: "韩元 1 = N 筹码" },
+  maintenance:           { ko: "점검 모드",           en: "Maintenance Mode",      zh: "维护模式",          desc_ko: "true 설정 시 게임사이트 점검 처리", desc_en: "Set true to put site in maintenance",  desc_zh: "设为true时启用维护页面" },
+  max_bet:               { ko: "최대 베팅",           en: "Max Bet",               zh: "最大下注",          desc_ko: "1회 최대 베팅 금액",              desc_en: "Maximum bet amount per round",           desc_zh: "每次最大下注金额" },
+  max_players_per_table: { ko: "테이블 최대 인원",   en: "Max Players/Table",     zh: "桌子最大人数",      desc_ko: "테이블당 최대 플레이어",           desc_en: "Max players per table",                 desc_zh: "每桌最大玩家数" },
+  min_bet:               { ko: "최소 베팅",           en: "Min Bet",               zh: "最小下注",          desc_ko: "1회 최소 베팅 금액",              desc_en: "Minimum bet amount per round",           desc_zh: "每次最小下注金额" },
+  min_exchange:          { ko: "최소 환전금액",       en: "Min Exchange (gems)",   zh: "最小提现（筹码）",  desc_ko: "교환 신청 최소 젬 수량",           desc_en: "Minimum gems for exchange request",      desc_zh: "提现申请最小筹码数量" },
+  min_recharge:          { ko: "최소 충전금액",       en: "Min Recharge (KRW)",    zh: "最小充值（韩元）",  desc_ko: "충전 신청 최소 원화",              desc_en: "Minimum KRW for recharge request",       desc_zh: "充值申请最小韩元金额" },
+  rake_percent:          { ko: "수수료율 (%)",        en: "Rake (%)",              zh: "佣金率（%）",       desc_ko: "게임 판당 수수료 퍼센트",          desc_en: "Rake percentage per game round",         desc_zh: "每局游戏佣金百分比" },
+  game_fee_percent:      { ko: "게임 수수료 (%)",     en: "Game Fee (%)",          zh: "游戏手续费（%）",   desc_ko: "게임 1판 총 베팅금액 기준 플랫폼 수수료 (1~20%)", desc_en: "Platform fee based on total bets per game (1~20%)", desc_zh: "每局总下注金额的平台手续费（1~20%）" },
 };
 
 // ─── Types ───────────────────────────────────────
@@ -232,9 +232,9 @@ export default function App() {
       // pending 있으면 배너 갱신 + 5분 반복 interval 유지
       if (hasPending) {
         const msg: string[] = [];
-        if (newRecharge > 0) msg.push(`충전 ${newRecharge}건`);
-        if (newExchange > 0) msg.push(`환전 ${newExchange}건`);
-        setAlertBanner(`⚠️ 미처리 대기: ${msg.join(' / ')}`);
+        if (newRecharge > 0) msg.push(`${t.alertRecharge} ${newRecharge}${t.alertUnit}`);
+        if (newExchange > 0) msg.push(`${t.alertExchange} ${newExchange}${t.alertUnit}`);
+        setAlertBanner(`${t.alertBannerPending} ${msg.join(' / ')} ${t.alertBannerSuffix}`);
         // interval 없을 때만 새로 생성 (X 닫아도 interval 유지)
         if (!alertIntervalRef.current) {
           alertIntervalRef.current = setInterval(() => {
@@ -332,7 +332,7 @@ export default function App() {
     if (amt<=0) return;
     // 파트너 이름으로 파트너 목록에서 id 찾기
     const partner = partners.find(p=>p.name===pfModal.record.partner_name);
-    if (!partner) { alert('파트너를 찾을 수 없습니다'); return; }
+    if (!partner) { alert(t.noPartners); return; }
     await axios.post(`${API}/api/admin/partners/charge`,{id:partner.id,amount:amt});
     setPfModal(null); setPfAmount(""); fetchAll();
   };
@@ -341,7 +341,7 @@ export default function App() {
     const amt = parseInt(pfAmount.replace(/,/g,''))||0;
     if (amt<=0) return;
     const partner = partners.find(p=>p.name===pfModal.record.partner_name);
-    if (!partner) { alert('파트너를 찾을 수 없습니다'); return; }
+    if (!partner) { alert(t.noPartners); return; }
     await axios.post(`${API}/api/admin/partners/deduct`,{id:partner.id,amount:amt});
     setPfModal(null); setPfAmount(""); fetchAll();
   };
@@ -374,7 +374,7 @@ export default function App() {
   };
   // ── 봇 삭제
   const handleDeleteBot = async (botId:number) => {
-    if (!window.confirm('이 로봇을 삭제할까요?')) return;
+    if (!window.confirm(t.confirmDeleteBot)) return;
     await axios.delete(`${API}/api/admin/bots/${botId}`); fetchAll();
   };
   // ── 봇 배정
@@ -400,7 +400,7 @@ export default function App() {
     setNoticeModal(false); setNoticeForm({title:"",content:""}); setEditingNoticeId(null); fetchAll();
   };
   const handleDeleteNotice = async (id:number) => {
-    if (!window.confirm('이 공지사항을 삭제할까요?')) return;
+    if (!window.confirm(t.confirmDeleteNotice)) return;
     await axios.delete(`${API}/api/admin/notices/${id}`); fetchAll();
   };
 
@@ -452,7 +452,7 @@ export default function App() {
     const rate = parseFloat(agencyEditForm.commission_rate)||0;
     if (rate<0||rate>100){setAgencyEditError(t.gameFeeError);return;}
     const code = agencyEditForm.referral_code.trim();
-    if (code && !/^[A-Za-z0-9]{1,50}$/.test(code)){setAgencyEditError('추천코드: 영문/숫자 최대 50자');return;}
+    if (code && !/^[A-Za-z0-9]{1,50}$/.test(code)){setAgencyEditError(t.agencyReferralLabel+': A-Z/0-9 max 50');return;}
     try {
       await axios.put(`${API}/api/admin/agencies/${agencyEditModal.id}`,{
         name: agencyEditForm.name,
@@ -539,7 +539,7 @@ export default function App() {
                 {(["ko","en","zh"] as Language[]).map(lang=>(
                   <button key={lang} onClick={()=>{setLanguage(lang);setShowLangMenu(false);}}
                     className={cn("w-full px-4 py-2.5 text-left text-sm hover:bg-zinc-800",language===lang?"text-emerald-400":"text-zinc-400")}>
-                    {lang==="ko"?"한국어":lang==="en"?"English":"中文"}
+                    {lang==="ko"?t.langKo:lang==="en"?t.langEn:t.langZh}
                   </button>
                 ))}
               </motion.div>
@@ -697,7 +697,7 @@ export default function App() {
                 <ShieldCheck size={14} className="text-emerald-400"/>
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-bold text-white truncate">{adminDisplayName||'관리자'}</div>
+                <div className="text-sm font-bold text-white truncate">{adminDisplayName||t.superAdmin}</div>
                 <div className="flex items-center gap-1 mt-0.5">
                   <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 text-[10px] font-bold rounded">
                     {adminRole==='superAdmin'?'SUPER ADMIN':adminRole==='admin'?'ADMIN':adminRole.toUpperCase()}
@@ -736,7 +736,7 @@ export default function App() {
                   {(["ko","en","zh"] as Language[]).map(lang=>(
                     <button key={lang} onClick={()=>{setLanguage(lang);setShowLangMenu(false);}}
                       className={cn("w-full px-3 py-2 text-left text-sm hover:bg-zinc-800",language===lang?"text-emerald-400":"text-zinc-400")}>
-                      {lang==="ko"?"한국어":lang==="en"?"English":"中文"}
+                      {lang==="ko"?t.langKo:lang==="en"?t.langEn:t.langZh}
                     </button>
                   ))}
                 </motion.div>
@@ -748,9 +748,9 @@ export default function App() {
             {/* 상단 로그아웃 버튼 */}
             <button onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-full hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 text-zinc-400 transition-all text-sm font-medium"
-              title="로그아웃">
+              title={t.logoutTooltip}>
               <LogOut size={16}/>
-              <span className="hidden sm:inline">로그아웃</span>
+              <span className="hidden sm:inline">{t.logoutLabel}</span>
             </button>
           </div>
         </header>
@@ -780,8 +780,8 @@ export default function App() {
                           <p className="text-sm text-amber-400">{r.amount.toLocaleString()}원 → {r.gems.toLocaleString()}젬 ({r.payment_method})</p>
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={()=>handleRechargeApprove(r.id)} className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={14}/>승인</button>
-                          <button onClick={()=>{setRejectModal({type:'recharge',id:r.id});setRejectMemo("");}} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={14}/>거절</button>
+                          <button onClick={()=>handleRechargeApprove(r.id)} className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={14}/>{t.approve}</button>
+                          <button onClick={()=>{setRejectModal({type:'recharge',id:r.id});setRejectMemo("");}} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={14}/>{t.reject}</button>
                         </div>
                       </div>
                     ))}
@@ -800,8 +800,8 @@ export default function App() {
                           <p className="text-sm text-purple-400">{r.gems.toLocaleString()}젬 → {r.amount.toLocaleString()}원 <span className="text-zinc-500">{r.account_info}</span></p>
                         </div>
                         <div className="flex gap-2">
-                          <button onClick={()=>handleExchangeApprove(r.id)} className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={14}/>승인</button>
-                          <button onClick={()=>{setRejectModal({type:'exchange',id:r.id});setRejectMemo("");}} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={14}/>거절</button>
+                          <button onClick={()=>handleExchangeApprove(r.id)} className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={14}/>{t.approve}</button>
+                          <button onClick={()=>{setRejectModal({type:'exchange',id:r.id});setRejectMemo("");}} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={14}/>{t.reject}</button>
                         </div>
                       </div>
                     ))}
@@ -922,7 +922,7 @@ export default function App() {
             <motion.div key="userFinance" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} className="space-y-6">
               {/* 충전 */}
               <div>
-                <h3 className="font-bold text-lg mb-3 text-amber-400 flex items-center gap-2"><TrendingUp size={18}/>충전 요청</h3>
+                <h3 className="font-bold text-lg mb-3 text-amber-400 flex items-center gap-2"><TrendingUp size={18}/>{t.rechargeTabTitle}</h3>
                 <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead><tr className="bg-zinc-800/50 border-b border-zinc-800">
@@ -960,7 +960,7 @@ export default function App() {
               </div>
               {/* 환전 */}
               <div>
-                <h3 className="font-bold text-lg mb-3 text-purple-400 flex items-center gap-2"><Coins size={18}/>환전 요청</h3>
+                <h3 className="font-bold text-lg mb-3 text-purple-400 flex items-center gap-2"><Coins size={18}/>{t.exchangeTabTitle}</h3>
                 <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-x-auto">
                   <table className="w-full text-left border-collapse min-w-[700px]">
                     <thead><tr className="bg-zinc-800/50 border-b border-zinc-800">
@@ -1105,10 +1105,10 @@ export default function App() {
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead><tr className="bg-zinc-800/50 border-b border-zinc-800">
-                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">제목</th>
-                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500 hidden md:table-cell">내용</th>
-                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">날짜</th>
-                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500 text-right">액션</th>
+                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">{t.noticeColTitle2}</th>
+                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500 hidden md:table-cell">{t.noticeColContent2}</th>
+                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">{t.noticeColDate2}</th>
+                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500 text-right">{t.noticeColActions2}</th>
                   </tr></thead>
                   <tbody>
                     {notices.map(n=>(
@@ -1121,12 +1121,12 @@ export default function App() {
                             <button
                               onClick={()=>{ setEditingNoticeId(n.id); setNoticeForm({title:n.title,content:n.content}); setNoticeModal('edit'); }}
                               className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-sky-400 bg-sky-400/10 hover:bg-sky-400/20 rounded-lg transition-all">
-                              <Edit3 size={13}/>수정
+                              <Edit3 size={13}/>{t.edit}
                             </button>
                             <button
                               onClick={()=>handleDeleteNotice(n.id)}
                               className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded-lg transition-all">
-                              <Trash2 size={13}/>삭제
+                              <Trash2 size={13}/>{t.delete}
                             </button>
                           </div>
                         </td>
@@ -1145,16 +1145,20 @@ export default function App() {
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden">
                 <table className="w-full text-left border-collapse">
                   <thead><tr className="bg-zinc-800/50 border-b border-zinc-800">
-                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">설정 항목</th>
-                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500 hidden sm:table-cell">설명</th>
-                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">설정값</th>
-                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500 text-right">편집</th>
+                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">{t.colSettingKey}</th>
+                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500 hidden sm:table-cell">{t.colSettingDesc}</th>
+                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">{t.colSettingVal}</th>
+                    <th className="px-5 py-3 text-xs font-bold uppercase text-zinc-500 text-right">{t.colSettingEdit}</th>
                   </tr></thead>
                   <tbody>
                     {settings.map(s=>{
                       const lbl = SETTING_LABELS[s.key];
-                      const displayLabel = lbl ? (language==='ko' ? lbl.ko : lbl.en) : s.key;
-                      const desc = lbl?.desc;
+                      const displayLabel = lbl
+                        ? (language==='ko' ? lbl.ko : language==='zh' ? lbl.zh : lbl.en)
+                        : s.key;
+                      const desc = lbl
+                        ? (language==='ko' ? lbl.desc_ko : language==='zh' ? lbl.desc_zh : lbl.desc_en)
+                        : undefined;
                       return (
                         <tr key={s.key} className="border-b border-zinc-800/50 hover:bg-zinc-800/20">
                           <td className="px-5 py-3">
@@ -1334,17 +1338,17 @@ export default function App() {
             setGcLoading(true);setGcMsg(null);
             try{
               await axios.post(`${API}/api/admin/users/${u.id}/swap-cards`,{...cardSwap,admin_id:'admin'});
-              setGcMsg('✅ 카드 교체 완료 (Audit 기록됨)');await fetchAll();
+              setGcMsg(t.gcSwapSuccess);await fetchAll();
               setCardSwap({new_cards:'',reason:''});
             }catch(e:any){setGcMsg('❌ '+e.message);}finally{setGcLoading(false);}
           };
           const handleForceEndRoom = async()=>{
-            if(!forceAction.reason){setGcMsg('종료 사유를 입력하세요');return;}
+            if(!forceAction.reason){setGcMsg(t.gcNeedReason);return;}
             if(!confirm('정말 게임방을 강제 종료하시겠습니까?'))return;
             setGcLoading(true);setGcMsg(null);
             try{
               await axios.post(`${API}/api/admin/rooms/${u.room_id}/force-end`,{reason:forceAction.reason,admin_id:'admin'});
-              setGcMsg('✅ 게임방 강제 종료됨');await fetchAll();
+              setGcMsg(t.gcEndRoomSuccess);await fetchAll();
             }catch(e:any){setGcMsg('❌ '+e.message);}finally{setGcLoading(false);}
           };
           const tabBtn=(id:'info'|'cards'|'action'|'endroom',label:string,icon:string)=>(
@@ -1363,17 +1367,17 @@ export default function App() {
                   <div className="w-9 h-9 rounded-full bg-blue-500/20 flex items-center justify-center text-lg">🎮</div>
                   <div>
                     <div className="font-bold text-base">{u.nickname} <span className="text-zinc-500 text-sm font-normal">({u.phone})</span></div>
-                    <div className="text-xs text-zinc-500">실시간 게임 제어 콘솔</div>
+                    <div className="text-xs text-zinc-500">{t.gcInfoSubtitle}</div>
                   </div>
                 </div>
                 <button onClick={()=>setGameControlModal(null)} className="text-zinc-500 hover:text-white"><X size={20}/></button>
               </div>
               {/* 탭 */}
               <div className="flex gap-2 px-5 pt-4">
-                {tabBtn('info','게임 정보','📊')}
-                {tabBtn('cards','카드 교체','🃏')}
-                {tabBtn('action','강제 액션','⚡')}
-                {tabBtn('endroom','방 종료','🚫')}
+                {tabBtn('info',t.gcTabInfo,'📊')}
+                {tabBtn('cards',t.gcTabCards,'🃏')}
+                {tabBtn('action',t.gcTabAction,'⚡')}
+                {tabBtn('endroom',t.gcTabEndRoom,'🚫')}
               </div>
               {/* 내용 */}
               <div className="p-5 space-y-3 min-h-[220px] max-h-[75vh] overflow-y-auto">
@@ -1382,14 +1386,14 @@ export default function App() {
                 {gcTab==='info'&&(
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     {[
-                      ['현재 게임방', u.room_name||'없음'],
-                      ['방 유형', u.room_type||'—'],
-                      ['테이블/좌석', u.table_no?`T${u.table_no}/S${u.seat_no}`:'—'],
-                      ['게임 상태', u.play_status||'offline'],
-                      ['핸드 상태', u.hand_status||'idle'],
-                      ['현재 카드', u.current_cards||'—'],
-                      ['플레이 시간', u.play_start?`${Math.floor((Date.now()-new Date(u.play_start).getTime())/60000)}분`:'—'],
-                      ['젬 잔액', u.gems.toLocaleString()+'젬'],
+                      [t.gcInfoRoom, u.room_name||t.gcCardNone],
+                      [t.gcInfoRoomType, u.room_type||'—'],
+                      [t.gcInfoTableSeat, u.table_no?`T${u.table_no}/S${u.seat_no}`:'—'],
+                      [t.gcInfoGameStatus, u.play_status||'offline'],
+                      [t.gcInfoHandStatus, u.hand_status||'idle'],
+                      [t.gcInfoCurrentCards, u.current_cards||'—'],
+                      [t.gcInfoPlayTime, u.play_start?`${Math.floor((Date.now()-new Date(u.play_start).getTime())/60000)}${t.gcMins}`:'—'],
+                      [t.gcInfoGems, u.gems.toLocaleString()+t.gcGemsUnit],
                     ].map(([k,v])=>(
                       <div key={k} className="bg-zinc-800/50 rounded-xl px-3 py-2">
                         <div className="text-zinc-500 text-xs mb-0.5">{k}</div>
@@ -1398,7 +1402,7 @@ export default function App() {
                     ))}
                     <div className="col-span-2 flex gap-2 pt-1">
                       <button onClick={()=>{setGcTab('action');setForceAction({action:'kick_from_room',reason:'',amount:''});}}
-                        className="flex-1 py-2 bg-amber-500/20 text-amber-400 rounded-xl text-sm font-bold hover:bg-amber-500/30">⬅ 강제 퇴장</button>
+                        className="flex-1 py-2 bg-amber-500/20 text-amber-400 rounded-xl text-sm font-bold hover:bg-amber-500/30">{t.gcForceExitBtn}</button>
                       <button onClick={()=>setGcTab('action')}
                         className="flex-1 py-2 bg-blue-500/20 text-blue-400 rounded-xl text-sm font-bold hover:bg-blue-500/30">{t.gcSpectate}</button>
                     </div>
@@ -1408,10 +1412,10 @@ export default function App() {
                 {gcTab==='cards'&&(()=>{
                   // ── 52장 카드 데이터 정의
                   const SUITS = [
-                    {key:'s', sym:'♠', label:'스페이드', color:'text-white'},
-                    {key:'h', sym:'♥', label:'하트',     color:'text-red-400'},
-                    {key:'d', sym:'♦', label:'다이아',   color:'text-red-400'},
-                    {key:'c', sym:'♣', label:'클럽',     color:'text-white'},
+                    {key:'s', sym:'♠', label:t.gcSuitSpade,   color:'text-white'},
+                    {key:'h', sym:'♥', label:t.gcSuitHeart,   color:'text-red-400'},
+                    {key:'d', sym:'♦', label:t.gcSuitDiamond, color:'text-red-400'},
+                    {key:'c', sym:'♣', label:t.gcSuitClub,    color:'text-white'},
                   ];
                   const RANKS = ['A','K','Q','J','10','9','8','7','6','5','4','3','2'];
                   const ALL_CARDS = SUITS.flatMap(s=>RANKS.map(r=>({id:`${r}${s.key}`,rank:r,suit:s.key,sym:s.sym,color:s.color})));
@@ -1443,13 +1447,13 @@ export default function App() {
                   };
 
                   const handleCardSwapVisual = async()=>{
-                    if(selectedCards.length!==2||!cardSwap.reason){setGcMsg('카드 2장 선택과 사유는 필수입니다');return;}
+                    if(selectedCards.length!==2||!cardSwap.reason){setGcMsg(t.gcNeedCardAndReason);return;}
                     if(!cardConfirmStep){setCardConfirmStep(true);return;}
                     setGcLoading(true);setGcMsg(null);setCardConfirmStep(false);
                     try{
                       const newCards = selectedCards.join('|');
                       await axios.post(`${API}/api/admin/users/${u.id}/swap-cards`,{new_cards:newCards,reason:cardSwap.reason,admin_id:'admin'});
-                      setGcMsg('✅ 카드 교체 완료 (Audit 기록됨)');
+                      setGcMsg(t.gcSwapSuccess);
                       setSelectedCards([]);
                       setCardSwap(p=>({...p,new_cards:''}));
                       await fetchAll();
@@ -1466,7 +1470,7 @@ export default function App() {
                   <div className="space-y-3">
                     {/* 현재 카드 표시 */}
                     <div className="flex items-center gap-3 bg-zinc-800/60 rounded-xl p-3">
-                      <span className="text-xs text-zinc-500 shrink-0">현재 카드:</span>
+                      <span className="text-xs text-zinc-500 shrink-0">{t.gcCurrentCards}</span>
                       <div className="flex gap-2">
                         {usedCards.length>0 ? usedCards.map(cid=>{
                           const c=ALL_CARDS.find(x=>x.id===cid);
@@ -1479,7 +1483,7 @@ export default function App() {
                               <span className="text-base leading-none">{c.sym}</span>
                             </div>
                           ):null;
-                        }) : <span className="text-zinc-600 text-sm">없음</span>}
+                        }) : <span className="text-zinc-600 text-sm">{t.gcCardNone}</span>}
                       </div>
                       {selectedCards.length===2&&(
                         <>
@@ -1504,7 +1508,7 @@ export default function App() {
 
                     {/* 필터 툴바 */}
                     <div className="flex items-center gap-2 flex-wrap">
-                      {[{k:'all',l:'전체'},
+                      {[{k:'all',l:t.gcSuitAll},
                         {k:'s',l:'♠'},
                         {k:'h',l:'♥'},
                         {k:'d',l:'♦'},
@@ -1522,11 +1526,11 @@ export default function App() {
                       ))}
                       <label className="flex items-center gap-1.5 ml-auto text-xs text-zinc-400 cursor-pointer">
                         <input type="checkbox" checked={showOnlyRemaining} onChange={e=>setShowOnlyRemaining(e.target.checked)} className="accent-blue-500"/>
-                        남은 카드만
+                        {t.gcOnlyRemaining}
                       </label>
                       <button onClick={handleRandomPick}
                         className="px-2.5 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/30 rounded-lg text-xs font-bold hover:bg-purple-500/30">
-                        🎲 랜덤
+                        {t.gcRandom}
                       </button>
                     </div>
 
@@ -1544,7 +1548,7 @@ export default function App() {
                                 <button key={cardId}
                                   onClick={()=>toggleCard(cardId)}
                                   disabled={isUsed}
-                                  title={isUsed?'이미 사용중':'클릭하여 선택'}
+                                  title={isUsed?t.gcCardUsed:t.gcCardSelect}
                                   className={cn(
                                     "w-8 h-11 rounded border flex flex-col items-center justify-center transition-all duration-150 text-[9px] font-black leading-none relative",
                                     isUsed
@@ -1572,9 +1576,9 @@ export default function App() {
 
                     {/* 선택된 카드 표시 */}
                     <div className="flex items-center gap-2 px-3 py-2 bg-zinc-800/40 rounded-xl text-sm">
-                      <span className="text-zinc-500 text-xs shrink-0">선택:</span>
+                      <span className="text-zinc-500 text-xs shrink-0">{t.gcSelectedLabel}</span>
                       {selectedCards.length===0
-                        ?<span className="text-zinc-600 text-xs">카드를 클릭하여 2장 선택 (순서대로)</span>
+                        ?<span className="text-zinc-600 text-xs">{t.gcSelectHint}</span>
                         :<div className="flex gap-2 items-center">
                           {selectedCards.map((cid,i)=>(
                             <span key={cid} className="flex items-center gap-1">
@@ -1586,35 +1590,35 @@ export default function App() {
                               <button onClick={()=>setSelectedCards(p=>p.filter(c=>c!==cid))} className="text-zinc-600 hover:text-red-400 text-xs ml-0.5">✕</button>
                             </span>
                           ))}
-                          {selectedCards.length===2&&<span className="ml-1 text-emerald-400 text-xs">✓ 2장 선택 완료</span>}
+                          {selectedCards.length===2&&<span className="ml-1 text-emerald-400 text-xs">{t.gc2CardsDone}</span>}
                         </div>
                       }
                     </div>
 
                     {/* 사유 입력 */}
                     <input value={cardSwap.reason} onChange={e=>setCardSwap(p=>({...p,reason:e.target.value}))}
-                      placeholder="교체 사유 *필수 입력 (감사로그 영구 기록)" 
+                      placeholder={t.gcReasonPlaceholder}
                       className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-amber-500"/>
 
                     {/* 확인창 */}
                     {cardConfirmStep&&selectedCards.length===2&&(
                       <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-sm space-y-2">
-                        <div className="font-bold text-amber-400">⚠️ 정말 교체하시겠습니까?</div>
+                        <div className="font-bold text-amber-400">{t.gcConfirmTitle}</div>
                         <div className="flex items-center gap-3 text-sm">
-                          <span className="text-zinc-400">기존:</span>
-                          <span className="font-bold text-white">{usedCards.map(c=>cardLabel(c)).join(' ')||'없음'}</span>
-                          <span className="text-zinc-500">→</span>
-                          <span className="text-zinc-400">변경:</span>
+                          <span className="text-zinc-400">{t.gcConfirmBefore}</span>
+                          <span className="font-bold text-white">{usedCards.map(c=>cardLabel(c)).join(' ')||t.gcCardNone}</span>
+                          <span className="text-zinc-500">{t.gcConfirmArrow}</span>
+                          <span className="text-zinc-400">{t.gcConfirmAfter}</span>
                           <span className="font-bold text-amber-400">{selectedCards.map(c=>cardLabel(c)).join(' ')}</span>
                         </div>
                         <div className="flex gap-2">
                           <button onClick={handleCardSwapVisual} disabled={gcLoading}
                             className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-sm disabled:opacity-40">
-                            {gcLoading?'처리중...':'✅ YES — 교체 확정'}
+                            {gcLoading?t.gcProcessing:t.gcConfirmYes}
                           </button>
                           <button onClick={()=>setCardConfirmStep(false)}
                             className="flex-1 py-2 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-xl text-sm">
-                            ❌ NO — 취소
+                            {t.gcConfirmNo}
                           </button>
                         </div>
                       </div>
@@ -1625,10 +1629,10 @@ export default function App() {
                       <button onClick={handleCardSwapVisual}
                         disabled={gcLoading||selectedCards.length!==2||!cardSwap.reason}
                         className="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-sm disabled:opacity-40 transition-all">
-                        {gcLoading?'처리중...':`🃏 카드 교체 확정 (${selectedCards.map(c=>cardLabel(c)).join(' + ')||'카드 2장 선택 필요'})`}
+                        {gcLoading?t.gcProcessing:(selectedCards.length===2?`${t.gcSwapBtn} (${selectedCards.map(c=>cardLabel(c)).join(' + ')})`:t.gcSwapHint)}
                       </button>
                     )}
-                    <div className="text-xs text-zinc-600 text-center">⚠ ROOT/SUPER_ADMIN 전용 · Audit Log 영구 기록</div>
+                    <div className="text-xs text-zinc-600 text-center">{t.gcSwapAuditNote}</div>
                   </div>
                   );
                 })()}
@@ -1644,7 +1648,7 @@ export default function App() {
                         {a:'allin',label:'All-in',color:'bg-orange-500/20 text-orange-400'},
                         {a:'disconnect',label:'Disconnect',color:'bg-zinc-500/30 text-zinc-400'},
                         {a:'timeout',label:'Timeout',color:'bg-yellow-500/20 text-yellow-400'},
-                        {a:'kick_from_room',label:'강제퇴장',color:'bg-red-500/20 text-red-400'},
+                        {a:'kick_from_room',label:t.gcForceActionKick,color:'bg-red-500/20 text-red-400'},
                       ].map(({a,label,color})=>(
                         <button key={a} onClick={()=>setForceAction(p=>({...p,action:a}))}
                           className={cn("py-2 rounded-xl text-xs font-bold border-2 transition-all",
@@ -1654,10 +1658,10 @@ export default function App() {
                       ))}
                     </div>
                     <input value={forceAction.reason} onChange={e=>setForceAction(p=>({...p,reason:e.target.value}))}
-                      placeholder="강제 액션 사유 *필수 입력" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500"/>
+                      placeholder={t.gcActionReasonPlaceholder} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500"/>
                     <button onClick={handleForceAction} disabled={gcLoading||!forceAction.action||!forceAction.reason}
                       className="w-full py-2.5 bg-red-500 hover:bg-red-400 text-white font-bold rounded-xl text-sm disabled:opacity-40 transition-all">
-                      {gcLoading?'처리중...':`⚡ ${forceAction.action||'액션 선택'} 강제 실행`}
+                      {gcLoading?t.gcProcessing:`⚡ ${forceAction.action||t.gcActionSelect} ${t.gcActionBtn.replace('⚡ ','')}`}
                     </button>
                   </div>
                 )}
@@ -1665,19 +1669,19 @@ export default function App() {
                 {gcTab==='endroom'&&(
                   <div className="space-y-3">
                     <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-sm text-red-400">
-                      ⚠️ <strong>게임방 강제 종료</strong> — 해당 방의 모든 플레이어가 퇴장됩니다.
+                      {t.gcEndRoomWarning2}
                     </div>
                     <div className="bg-zinc-800/50 rounded-xl p-3 text-sm">
-                      <span className="text-zinc-500">대상 방: </span>
+                      <span className="text-zinc-500">{t.gcEndRoomTarget}</span>
                       <span className="font-bold">{u.room_name||'—'}</span>
                     </div>
                     <input value={forceAction.reason} onChange={e=>setForceAction(p=>({...p,reason:e.target.value}))}
-                      placeholder="종료 사유 *필수 입력 (영구 기록됨)" className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-500"/>
+                      placeholder={t.gcEndRoomReasonPlaceholder} className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-red-500"/>
                     <button onClick={handleForceEndRoom} disabled={gcLoading||!forceAction.reason||!u.room_id}
                       className="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm disabled:opacity-40 transition-all">
                       {gcLoading?t.gcProcessing:t.gcEndRoomBtn}
                     </button>
-                    {!u.room_id&&<div className="text-xs text-zinc-600 text-center">현재 방에 없는 사용자입니다</div>}
+                    {!u.room_id&&<div className="text-xs text-zinc-600 text-center">{t.gcNoRoom}</div>}
                   </div>
                 )}
               </div>
@@ -1694,7 +1698,7 @@ export default function App() {
             <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0.9}}
               className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
               <h3 className="font-bold text-lg mb-1">{partnerModal.mode==='charge'?t.partnerCharge:t.partnerDeduct}</h3>
-              <p className="text-zinc-400 text-sm mb-4">{partnerModal.partner.name} · 현재 {partnerModal.partner.balance.toLocaleString()}원</p>
+              <p className="text-zinc-400 text-sm mb-4">{partnerModal.partner.name} · {t.partnerCurrentBalance} {partnerModal.partner.balance.toLocaleString()}{t.wonUnit}</p>
               <input type="number" placeholder={t.partnerAmountPlaceholder} value={partnerAmount} onChange={e=>setPartnerAmount(e.target.value)}
                 className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-emerald-500/50 outline-none mb-4"/>
               <div className="flex gap-3">
@@ -1852,14 +1856,14 @@ export default function App() {
                   <input type="number" min="0" max="100" step="0.1" value={agencyEditForm.commission_rate}
                     onChange={e=>setAgencyEditForm(p=>({...p,commission_rate:e.target.value}))}
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-violet-500/50 outline-none text-sm"/>
-                  <p className="text-[11px] text-zinc-500 mt-1">0 ~ 100% · 소수점 2자리 허용</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">{t.agencyCommissionNote}</p>
                 </div>
                 <div>
                   <label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{t.agencyReferralLabel}</label>
                   <input value={agencyEditForm.referral_code} onChange={e=>setAgencyEditForm(p=>({...p,referral_code:e.target.value.toUpperCase()}))}
                     placeholder="예: BUSAN01 (영문/숫자, 최대 50자)"
                     className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-violet-500/50 outline-none text-sm font-mono"/>
-                  <p className="text-[11px] text-zinc-500 mt-1">중복 불가 · 비워두면 본사 매출로 집계</p>
+                  <p className="text-[11px] text-zinc-500 mt-1">{t.agencyDupNote}</p>
                 </div>
                 {agencyEditError && <p className="text-red-400 text-xs font-bold">{agencyEditError}</p>}
               </div>
