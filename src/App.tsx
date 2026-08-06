@@ -30,6 +30,7 @@ const SETTING_LABELS: Record<string, { ko: string; en: string; desc?: string }> 
   min_exchange:          { ko: "최소 환전금액",         en: "Min Exchange (gems)",      desc: "교환 신청 최소 젬 수량" },
   min_recharge:          { ko: "최소 충전금액",         en: "Min Recharge (KRW)",       desc: "충전 신청 최소 원화" },
   rake_percent:          { ko: "수수료율 (%)",           en: "Rake (%)",                 desc: "게임 판당 수수료 퍼센트" },
+  game_fee_percent:      { ko: "게임 수수료 (%)",        en: "Game Fee (%)",             desc: "게임 1판 총 베팅금액 기준 플랫폼 수수료 (1~20%)" },
 };
 
 // ─── Types ───────────────────────────────────────
@@ -50,7 +51,7 @@ interface ExchangeReq { id:number; user_id:string; phone:string; nickname:string
 interface Bot2 { id:number; name:string; difficulty:string; style:string; chips:number; status:string; assigned_room:string|null; }
 interface Notice { id:number; title:string; content:string; created_at:string; }
 interface Setting { key:string; value:string; }
-interface Partner { id:number; name:string; balance:number; status:string; created_at:string; }
+interface Partner { id:number; name:string; balance:number; status:string; created_at:string; commission_rate?:number; referral_code?:string; sales?:number; }
 interface PartnerFinance { id:number; partner_name:string; type:string; amount:number; status:string; created_at:string; }
 interface Stats { total_users:number; active_rooms:number; pending_recharge_count:number; pending_recharge_total:number; pending_exchange_count:number; pending_exchange_total:number; }
 
@@ -140,6 +141,15 @@ export default function App() {
   // 파트너파이낸스 액션 모달
   const [pfModal, setPfModal] = useState<{record:PartnerFinance,mode:'charge'|'exchange'}|null>(null);
   const [pfAmount, setPfAmount] = useState("");
+  // 하부대리점 수정 모달
+  const [agencyEditModal, setAgencyEditModal] = useState<Partner|null>(null);
+  const [agencyEditForm, setAgencyEditForm] = useState({name:"",commission_rate:"",referral_code:""});
+  const [agencyEditError, setAgencyEditError] = useState<string|null>(null);
+  // Toast 알림
+  const [toast, setToast] = useState<{msg:string,type:'ok'|'err'}|null>(null);
+  const showToast = (msg:string, type:'ok'|'err'='ok') => {
+    setToast({msg,type}); setTimeout(()=>setToast(null), 2500);
+  };
   const [roomAddModal, setRoomAddModal] = useState(false);
   const [roomForm, setRoomForm] = useState({name:"",type:"tournament",buy_in_gems:"100000",max_players:"9",blinds:"100/200",visibility:"public",password:""});
   const [rejectModal, setRejectModal] = useState<{type:'recharge'|'exchange',id:number}|null>(null);
@@ -192,7 +202,7 @@ export default function App() {
   const fetchAll = useCallback(async () => {
     if (!isLoggedIn) return;
     try {
-      const [statsR,usersR,roomsR,rechargeR,exchangeR,botsR,noticesR,settingsR,histR,partnersR,pfR] = await Promise.all([
+      const [statsR,usersR,roomsR,rechargeR,exchangeR,botsR,noticesR,settingsR,histR,partnersR,pfR,agenciesR] = await Promise.all([
         axios.get(`${API}/api/admin/stats`),
         axios.get(`${API}/api/admin/users`),
         axios.get(`${API}/api/admin/games`),
@@ -204,6 +214,7 @@ export default function App() {
         axios.get(`${API}/api/admin/history`),
         axios.get(`${API}/api/admin/partners`),
         axios.get(`${API}/api/admin/partner-finance`),
+        axios.get(`${API}/api/admin/agencies`),
       ]);
       setStats(statsR.data);
       setGameUsers(usersR.data);
@@ -244,7 +255,7 @@ export default function App() {
       setNotices(noticesR.data);
       setSettings(settingsR.data);
       setGameHistory(histR.data);
-      setPartners(partnersR.data);
+      setPartners(agenciesR.data);
       setPartnerFinance(pfR.data);
     } catch(e){ console.error(e); }
   }, [isLoggedIn, playDingDong]);
@@ -396,7 +407,17 @@ export default function App() {
   // ── 설정 저장
   const handleSaveSetting = async () => {
     if (!editSetting) return;
-    await axios.post(`${API}/api/admin/settings`,editSetting);
+    // game_fee_percent: 전용 API 사용 + 검증
+    if (editSetting.key === 'game_fee_percent') {
+      const fee = parseFloat(editSetting.value);
+      if (isNaN(fee)||fee<1||fee>20) { showToast(t.gameFeeError,'err'); return; }
+      try {
+        await axios.put(`${API}/api/admin/settings/game-fee`,{game_fee_percent:fee});
+        showToast(t.gameFeeSuccess,'ok');
+      } catch(e:any){ showToast(e.response?.data?.message||t.gameFeeError,'err'); return; }
+    } else {
+      await axios.post(`${API}/api/admin/settings`,editSetting);
+    }
     setEditSetting(null); fetchAll();
   };
 
@@ -421,8 +442,29 @@ export default function App() {
   };
   // ── 파트너 삭제
   const handleDeletePartner = async (id:number) => {
-    if (!window.confirm('이 파트너를 삭제할까요?')) return;
+    if (!window.confirm(t.confirmDeletePartner)) return;
     await axios.delete(`${API}/api/admin/partners/${id}`); fetchAll();
+  };
+  // ── 하부대리점 수정
+  const handleAgencyEditSave = async () => {
+    if (!agencyEditModal) return;
+    setAgencyEditError(null);
+    const rate = parseFloat(agencyEditForm.commission_rate)||0;
+    if (rate<0||rate>100){setAgencyEditError(t.gameFeeError);return;}
+    const code = agencyEditForm.referral_code.trim();
+    if (code && !/^[A-Za-z0-9]{1,50}$/.test(code)){setAgencyEditError('추천코드: 영문/숫자 최대 50자');return;}
+    try {
+      await axios.put(`${API}/api/admin/agencies/${agencyEditModal.id}`,{
+        name: agencyEditForm.name,
+        commission_rate: rate,
+        referral_code: code
+      });
+      setAgencyEditModal(null);
+      showToast(t.agencyEditSuccess,'ok');
+      fetchAll();
+    } catch(e:any){
+      setAgencyEditError(e.response?.data?.message||t.agencyEditError);
+    }
   };
 
   const pendingRecharge = rechargeReqs.filter(r=>r.status==='pending').length;
@@ -1168,31 +1210,60 @@ export default function App() {
             </motion.div>
           )}
 
-          {/* ── PARTNERS (업체관리) ── */}
+          {/* ── PARTNERS (하부 대리점 관리) ── */}
           {activeTab==="partners" && (
             <motion.div key="partners" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}}>
               <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[600px]">
+                <table className="w-full text-left border-collapse min-w-[900px]">
                   <thead><tr className="bg-zinc-800/50 border-b border-zinc-800">
-                    {["이름","잔액","상태","가입일","조작"].map(h=><th key={h} className="px-5 py-3 text-xs font-bold uppercase text-zinc-500">{h}</th>)}
+                    {[t.colName,t.colSales,t.colCommission,t.colReferralCode,t.colBalance,t.colStatus,t.colJoinDate,t.colOperation].map(h=>(
+                      <th key={h} className="px-4 py-3 text-xs font-bold uppercase text-zinc-500 whitespace-nowrap">{h}</th>
+                    ))}
                   </tr></thead>
                   <tbody>
                     {partners.map(p=>(
                       <tr key={p.id} className="border-b border-zinc-800/50 hover:bg-zinc-800/20">
-                        <td className="px-5 py-3 font-bold">{p.name}</td>
-                        <td className="px-5 py-3 text-amber-400 font-mono text-sm">{p.balance.toLocaleString()}원</td>
-                        <td className="px-5 py-3"><span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold",p.status==='active'?"bg-emerald-400/10 text-emerald-400":"bg-zinc-700 text-zinc-500")}>{p.status}</span></td>
-                        <td className="px-5 py-3 text-zinc-500 text-sm">{new Date(p.created_at).toLocaleDateString('ko-KR')}</td>
-                        <td className="px-5 py-3">
-                          <div className="flex gap-1.5">
-                            <button onClick={()=>{setPartnerModal({partner:p,mode:'charge'});setPartnerAmount("");}} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 rounded-lg"><PlusCircle size={13}/>+충전</button>
-                            <button onClick={()=>{setPartnerModal({partner:p,mode:'deduct'});setPartnerAmount("");}} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 rounded-lg"><MinusCircle size={13}/>-삭감</button>
-                            <button onClick={()=>handleDeletePartner(p.id)} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded-lg"><Trash2 size={13}/>삭제</button>
+                        <td className="px-4 py-3 font-bold whitespace-nowrap">{p.name}</td>
+                        {/* 매출 */}
+                        <td className="px-4 py-3">
+                          <span className="text-yellow-400 font-bold text-sm">
+                            {(p.sales||0) > 0 ? `₩${(p.sales||0).toLocaleString()}` : '₩0'}
+                          </span>
+                          {!p.referral_code && <span className="ml-1 text-[9px] text-zinc-500">({t.agencyHQSales})</span>}
+                        </td>
+                        {/* 배당수익 */}
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-sky-400/10 text-sky-400">
+                            {(p.commission_rate||0).toFixed(1)}%
+                          </span>
+                        </td>
+                        {/* 추천인 코드 */}
+                        <td className="px-4 py-3">
+                          {p.referral_code
+                            ? <div className="flex items-center gap-1.5">
+                                <span className="font-mono text-sm text-emerald-300">{p.referral_code}</span>
+                                <button title="복사" onClick={()=>{navigator.clipboard.writeText(p.referral_code!);showToast(t.agencyCodeCopied,'ok');}}
+                                  className="text-zinc-500 hover:text-zinc-300 transition-colors text-xs">📋</button>
+                              </div>
+                            : <span className="text-zinc-600 italic text-xs">—</span>}
+                        </td>
+                        <td className="px-4 py-3 text-amber-400 font-mono text-sm whitespace-nowrap">{p.balance.toLocaleString()}{t.wonUnit}</td>
+                        <td className="px-4 py-3"><span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold",p.status==='active'?"bg-emerald-400/10 text-emerald-400":"bg-zinc-700 text-zinc-500")}>{p.status}</span></td>
+                        <td className="px-4 py-3 text-zinc-500 text-sm whitespace-nowrap">{new Date(p.created_at).toLocaleDateString('ko-KR')}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex gap-1 flex-wrap">
+                            <button onClick={()=>{setAgencyEditModal(p);setAgencyEditForm({name:p.name,commission_rate:String(p.commission_rate||0),referral_code:p.referral_code||''});setAgencyEditError(null);}}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-violet-400 bg-violet-400/10 hover:bg-violet-400/20 rounded-lg whitespace-nowrap">
+                              <Edit3 size={12}/>{t.agencyEditBtn}
+                            </button>
+                            <button onClick={()=>{setPartnerModal({partner:p,mode:'charge'});setPartnerAmount("");}} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-emerald-400 bg-emerald-400/10 hover:bg-emerald-400/20 rounded-lg whitespace-nowrap"><PlusCircle size={12}/>{t.charge}</button>
+                            <button onClick={()=>{setPartnerModal({partner:p,mode:'deduct'});setPartnerAmount("");}} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 rounded-lg whitespace-nowrap"><MinusCircle size={12}/>{t.deduct}</button>
+                            <button onClick={()=>handleDeletePartner(p.id)} className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold text-red-400 bg-red-400/10 hover:bg-red-400/20 rounded-lg whitespace-nowrap"><Trash2 size={12}/>{t.delete}</button>
                           </div>
                         </td>
                       </tr>
                     ))}
-                    {partners.length===0&&<tr><td colSpan={5} className="text-center py-12 text-zinc-600">{t.noPartners}</td></tr>}
+                    {partners.length===0&&<tr><td colSpan={8} className="text-center py-12 text-zinc-600">{t.noPartners}</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -1743,6 +1814,61 @@ export default function App() {
                   <PlusCircle size={16}/>{t.roomCreateBtn}
                 </button>
                 <button onClick={()=>setRoomAddModal(false)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 font-bold py-3 rounded-xl">{t.cancel}</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Toast 알림 ── */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div initial={{opacity:0,y:40}} animate={{opacity:1,y:0}} exit={{opacity:0,y:40}}
+            className={cn("fixed bottom-6 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 rounded-xl text-sm font-bold shadow-2xl",
+              toast.type==='ok'?"bg-emerald-500 text-zinc-950":"bg-red-500 text-white")}>
+            {toast.msg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── 하부대리점 수정 모달 ── */}
+      <AnimatePresence>
+        {agencyEditModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+            <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0.9}}
+              className="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="font-bold text-lg flex items-center gap-2"><Edit3 size={18} className="text-violet-400"/>{t.agencyEditTitle}</h3>
+                <button onClick={()=>setAgencyEditModal(null)} className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded-lg"><X size={18}/></button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{t.agencyNameLabel}</label>
+                  <input value={agencyEditForm.name} onChange={e=>setAgencyEditForm(p=>({...p,name:e.target.value}))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-violet-500/50 outline-none text-sm"/>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{t.agencyCommissionLabel}</label>
+                  <input type="number" min="0" max="100" step="0.1" value={agencyEditForm.commission_rate}
+                    onChange={e=>setAgencyEditForm(p=>({...p,commission_rate:e.target.value}))}
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-violet-500/50 outline-none text-sm"/>
+                  <p className="text-[11px] text-zinc-500 mt-1">0 ~ 100% · 소수점 2자리 허용</p>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{t.agencyReferralLabel}</label>
+                  <input value={agencyEditForm.referral_code} onChange={e=>setAgencyEditForm(p=>({...p,referral_code:e.target.value.toUpperCase()}))}
+                    placeholder="예: BUSAN01 (영문/숫자, 최대 50자)"
+                    className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-violet-500/50 outline-none text-sm font-mono"/>
+                  <p className="text-[11px] text-zinc-500 mt-1">중복 불가 · 비워두면 본사 매출로 집계</p>
+                </div>
+                {agencyEditError && <p className="text-red-400 text-xs font-bold">{agencyEditError}</p>}
+              </div>
+              <div className="flex gap-3 mt-5">
+                <button onClick={handleAgencyEditSave} disabled={!agencyEditForm.name}
+                  className="flex-1 bg-violet-500 hover:bg-violet-400 text-white font-bold py-3 rounded-xl disabled:opacity-30 transition-all">
+                  {t.agencyEditSave}
+                </button>
+                <button onClick={()=>setAgencyEditModal(null)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 font-bold py-3 rounded-xl">{t.cancel}</button>
               </div>
             </motion.div>
           </div>

@@ -555,7 +555,65 @@ app.post('/api/admin/settings', async c => {
   } catch(e:any){ return err(c,e.message,500) }
 })
 
-// 파트너 목록
+// 게임 수수료 설정
+app.put('/api/admin/settings/game-fee', async c => {
+  try {
+    const {game_fee_percent} = await c.req.json()
+    const fee = parseFloat(game_fee_percent)
+    if (isNaN(fee)||fee<1||fee>20) return err(c,'게임 수수료는 1~20%')
+    await c.env.DB.prepare(
+      'INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value'
+    ).bind('game_fee_percent', String(fee)).run()
+    return ok(c,{success:true, game_fee_percent: fee})
+  } catch(e:any){ return err(c,e.message,500) }
+})
+
+// 하부대리점 목록 (매출 포함)
+app.get('/api/admin/agencies', async c => {
+  try {
+    const {results: agencies} = await c.env.DB.prepare('SELECT * FROM partners ORDER BY id DESC').all() as any
+    // 각 대리점별 매출(추천코드 기준 충전합계) 계산
+    const salesMap: Record<string,number> = {}
+    try {
+      const {results: recharges} = await c.env.DB.prepare(
+        "SELECT u.referral_code, SUM(r.amount) as total FROM recharge_requests r LEFT JOIN game_users u ON r.user_id=u.id WHERE r.status='approved' GROUP BY u.referral_code"
+      ).all() as any
+      for (const row of recharges) {
+        const key = row.referral_code || '__HQ__'
+        salesMap[key] = (salesMap[key]||0) + (row.total||0)
+      }
+    } catch(_){}
+    const result = agencies.map((a:any) => ({
+      ...a,
+      sales: a.referral_code ? (salesMap[a.referral_code]||0) : (salesMap['__HQ__']||0)
+    }))
+    return ok(c, result)
+  } catch(e:any){ return ok(c,[]) }
+})
+
+// 하부대리점 수정 (이름/배당율/추천코드)
+app.put('/api/admin/agencies/:id', async c => {
+  try {
+    const id = c.req.param('id')
+    const {name, commission_rate, referral_code} = await c.req.json()
+    if (!name) return err(c,'이름은 필수')
+    const rate = parseFloat(commission_rate)||0
+    if (rate < 0 || rate > 100) return err(c,'배당수익은 0~100%')
+    const code = (referral_code||'').trim()
+    if (code && !/^[A-Za-z0-9]{1,50}$/.test(code)) return err(c,'추천코드는 영문/숫자 최대 50자')
+    // 중복 체크
+    if (code) {
+      const dup = await c.env.DB.prepare('SELECT id FROM partners WHERE referral_code=? AND id!=?').bind(code,id).first()
+      if (dup) return err(c,'이미 사용 중인 추천인 코드')
+    }
+    await c.env.DB.prepare(
+      'UPDATE partners SET name=?, commission_rate=?, referral_code=? WHERE id=?'
+    ).bind(name, rate, code||null, id).run()
+    return ok(c,{success:true})
+  } catch(e:any){ return err(c,e.message,500) }
+})
+
+// 파트너 목록 (기존 유지)
 app.get('/api/admin/partners', async c => {
   try {
     const {results} = await c.env.DB.prepare('SELECT * FROM partners ORDER BY id DESC').all()
