@@ -152,6 +152,13 @@ export default function App() {
   };
   const [roomAddModal, setRoomAddModal] = useState(false);
   const [roomForm, setRoomForm] = useState({name:"",type:"tournament",buy_in_gems:"100000",max_players:"9",blinds:"100/200",visibility:"public",password:""});
+  // 5가지 유형별 모달 상태
+  const [roomTypeModal, setRoomTypeModal] = useState<'club'|'mtt'|'sng'|'omaha'|'shortdeck'|null>(null);
+  const [clubForm, setClubForm] = useState({name:"",buy_in_gems:"100000",max_players:"9",blinds:"100/200",visibility:"private",club_description:"",club_members_limit:"50"});
+  const [mttForm, setMttForm]   = useState({name:"",buy_in_gems:"50000",max_players:"9",blinds:"100/200",visibility:"public",mtt_max_tables:"4",mtt_start_time:"",mtt_rebuy_allowed:false});
+  const [sngForm, setSngForm]   = useState({name:"",buy_in_gems:"30000",max_players:"6",blinds:"50/100",visibility:"public",sng_start_players:"6",sng_prize_structure:"50/30/20"});
+  const [omahaForm, setOmahaForm] = useState({name:"",buy_in_gems:"100000",max_players:"6",blinds:"100/200",visibility:"public",omaha_variant:"PLO"});
+  const [shortForm, setShortForm] = useState({name:"",buy_in_gems:"100000",max_players:"6",blinds:"100/200",visibility:"public",short_deck_ante:"100"});
   const [rejectModal, setRejectModal] = useState<{type:'recharge'|'exchange',id:number}|null>(null);
   const [rejectMemo, setRejectMemo] = useState("");
   const [editSetting, setEditSetting] = useState<{key:string,value:string}|null>(null);
@@ -424,10 +431,48 @@ export default function App() {
   // ── 게임방 생성
   const handleCreateRoom = async () => {
     if (!roomForm.name) return;
-    // admin이 방 생성 시 gems 차감 없이 직접 DB 삽입
     await axios.post(`${API}/api/admin/rooms/create`, {...roomForm, buy_in_gems:parseInt(roomForm.buy_in_gems)||100000, max_players:parseInt(roomForm.max_players)||9});
     setRoomAddModal(false); setRoomForm({name:"",type:"tournament",buy_in_gems:"100000",max_players:"9",blinds:"100/200",visibility:"public",password:""}); fetchAll();
   };
+  // ── 유형별 방 생성 공통 헬퍼
+  const createRoom = async (payload: Record<string, any>, reset: ()=>void) => {
+    if (!payload.name) return;
+    try {
+      await axios.post(`${API}/api/admin/rooms/create`, payload);
+      reset(); setRoomTypeModal(null); fetchAll();
+      showToast(t.roomNewBtn + ' ✅', 'ok');
+    } catch(e:any){ showToast('❌ ' + e.message, 'err'); }
+  };
+  const handleCreateClub = () => createRoom({
+    ...clubForm, type:'club',
+    buy_in_gems: parseInt(clubForm.buy_in_gems)||100000,
+    max_players: parseInt(clubForm.max_players)||9,
+    club_members_limit: parseInt(clubForm.club_members_limit)||50,
+  }, ()=>setClubForm({name:"",buy_in_gems:"100000",max_players:"9",blinds:"100/200",visibility:"private",club_description:"",club_members_limit:"50"}));
+  const handleCreateMTT = () => createRoom({
+    ...mttForm, type:'mtt',
+    buy_in_gems: parseInt(mttForm.buy_in_gems)||50000,
+    max_players: parseInt(mttForm.max_players)||9,
+    mtt_max_tables: parseInt(mttForm.mtt_max_tables)||4,
+    mtt_rebuy_allowed: mttForm.mtt_rebuy_allowed ? 1 : 0,
+  }, ()=>setMttForm({name:"",buy_in_gems:"50000",max_players:"9",blinds:"100/200",visibility:"public",mtt_max_tables:"4",mtt_start_time:"",mtt_rebuy_allowed:false}));
+  const handleCreateSNG = () => createRoom({
+    ...sngForm, type:'sng',
+    buy_in_gems: parseInt(sngForm.buy_in_gems)||30000,
+    max_players: parseInt(sngForm.sng_start_players)||6,
+    sng_start_players: parseInt(sngForm.sng_start_players)||6,
+  }, ()=>setSngForm({name:"",buy_in_gems:"30000",max_players:"6",blinds:"50/100",visibility:"public",sng_start_players:"6",sng_prize_structure:"50/30/20"}));
+  const handleCreateOmaha = () => createRoom({
+    ...omahaForm, type:'omaha',
+    buy_in_gems: parseInt(omahaForm.buy_in_gems)||100000,
+    max_players: parseInt(omahaForm.max_players)||6,
+  }, ()=>setOmahaForm({name:"",buy_in_gems:"100000",max_players:"6",blinds:"100/200",visibility:"public",omaha_variant:"PLO"}));
+  const handleCreateShortDeck = () => createRoom({
+    ...shortForm, type:'short_deck',
+    buy_in_gems: parseInt(shortForm.buy_in_gems)||100000,
+    max_players: parseInt(shortForm.max_players)||6,
+    short_deck_ante: parseInt(shortForm.short_deck_ante)||100,
+  }, ()=>setShortForm({name:"",buy_in_gems:"100000",max_players:"6",blinds:"100/200",visibility:"public",short_deck_ante:"100"}));
   // ── 게임방 닫기
   const handleCloseRoom = async (id:string) => {
     await axios.post(`${API}/api/admin/games/delete`,{id}); fetchAll();
@@ -1002,29 +1047,58 @@ export default function App() {
           {/* ── GAMES (게임방) ── */}
           {activeTab==="games" && (
             <motion.div key="games" initial={{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0,x:-20}} className="space-y-4">
-              <div className="flex justify-end">
+              {/* 방 유형별 생성 버튼 5개 */}
+              <div className="flex flex-wrap gap-2 justify-end">
+                {([
+                  {type:'club',      label:t.roomTypeClub,      color:'bg-violet-500 hover:bg-violet-400',    icon:'🏛'},
+                  {type:'mtt',       label:t.roomTypeMTT,       color:'bg-blue-500 hover:bg-blue-400',        icon:'🏆'},
+                  {type:'sng',       label:t.roomTypeSNG,       color:'bg-amber-500 hover:bg-amber-400',      icon:'⚡'},
+                  {type:'omaha',     label:t.roomTypeOmaha,     color:'bg-emerald-500 hover:bg-emerald-400',  icon:'🃏'},
+                  {type:'shortdeck', label:t.roomTypeShortDeck, color:'bg-red-500 hover:bg-red-400',          icon:'🎴'},
+                ] as const).map(({type,label,color,icon})=>(
+                  <button key={type} onClick={()=>setRoomTypeModal(type)}
+                    className={`flex items-center gap-1.5 px-3 py-2 ${color} text-white font-bold rounded-xl text-sm transition-all`}>
+                    <span>{icon}</span>{label}
+                  </button>
+                ))}
                 <button onClick={()=>setRoomAddModal(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-bold rounded-xl text-sm">
+                  className="flex items-center gap-2 px-4 py-2 bg-zinc-700 hover:bg-zinc-600 text-white font-bold rounded-xl text-sm">
                   <PlusCircle size={16}/>{t.createRoom}
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {gameRooms.filter(r=>r.status==='open').map(r=>(
+                {gameRooms.filter(r=>r.status==='open').map(r=>{
+                  const typeMeta: Record<string,{icon:string,color:string}> = {
+                    club:       {icon:'🏛', color:'text-violet-400'},
+                    mtt:        {icon:'🏆', color:'text-blue-400'},
+                    sng:        {icon:'⚡', color:'text-amber-400'},
+                    omaha:      {icon:'🃏', color:'text-emerald-400'},
+                    short_deck: {icon:'🎴', color:'text-red-400'},
+                    tournament: {icon:'🎮', color:'text-zinc-400'},
+                    cash:       {icon:'💰', color:'text-yellow-400'},
+                    private:    {icon:'🔒', color:'text-zinc-400'},
+                  };
+                  const meta = typeMeta[r.type] ?? {icon:'🎮', color:'text-zinc-400'};
+                  return (
                   <div key={r.id} className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-5 hover:border-emerald-500/30 transition-all">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className="w-11 h-11 bg-zinc-800 rounded-xl flex items-center justify-center"><Gamepad2 size={22} className="text-zinc-500"/></div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400/10 text-emerald-400">open</span>
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="w-11 h-11 bg-zinc-800 rounded-xl flex items-center justify-center text-xl">{meta.icon}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-[10px] font-bold uppercase ${meta.color} bg-zinc-800 px-2 py-0.5 rounded-full`}>{r.type}</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-400/10 text-emerald-400">open</span>
+                      </div>
                     </div>
                     <h3 className="font-bold mb-1">{r.name}</h3>
-                    <p className="text-xs text-zinc-500 mb-3">{r.type} · {r.blinds} · 최대{r.max_players}명 · {r.visibility}</p>
+                    <p className="text-xs text-zinc-500 mb-3">{r.blinds} · {t.maxPlayers}{r.max_players}{t.maxPlayersUnit} · {r.visibility}</p>
                     <div className="flex justify-between items-center pt-3 border-t border-zinc-800">
-                      <p className="text-amber-400 font-mono text-sm">{r.buy_in_gems.toLocaleString()}젬</p>
+                      <p className="text-amber-400 font-mono text-sm">{r.buy_in_gems.toLocaleString()}{t.gemUnit}</p>
                       <button onClick={()=>handleCloseRoom(r.id)} className="px-3 py-1 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 flex items-center gap-1">
                         <X size={12}/>{t.closeRoom}
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
                 {gameRooms.filter(r=>r.status==='open').length===0&&<div className="col-span-3 text-center py-16 text-zinc-600">{t.noActiveRoom}</div>}
               </div>
             </motion.div>
@@ -1822,6 +1896,132 @@ export default function App() {
             </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* ══ 유형별 방 생성 모달 ══ */}
+      <AnimatePresence>
+        {roomTypeModal && (()=>{
+          // 공통 입력 컴포넌트 헬퍼
+          const F = ({label,children}:{label:string,children:React.ReactNode}) => (
+            <div><label className="text-xs font-bold text-zinc-400 mb-1.5 block uppercase tracking-wider">{label}</label>{children}</div>
+          );
+          const inp = "w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 outline-none text-sm focus:ring-2 focus:ring-violet-500/40";
+          const visSel = (val:string, onChange:(v:string)=>void) => (
+            <select value={val} onChange={e=>onChange(e.target.value)} className={inp}>
+              <option value="public">public</option>
+              <option value="private">private</option>
+            </select>
+          );
+
+          const modalMeta: Record<string,{title:string,icon:string,color:string,desc:string}> = {
+            club:      {title:t.roomTypeClub,      icon:'🏛', color:'violet', desc:t.roomTypeClubDesc},
+            mtt:       {title:t.roomTypeMTT,       icon:'🏆', color:'blue',   desc:t.roomTypeMTTDesc},
+            sng:       {title:t.roomTypeSNG,       icon:'⚡', color:'amber',  desc:t.roomTypeSNGDesc},
+            omaha:     {title:t.roomTypeOmaha,     icon:'🃏', color:'emerald',desc:t.roomTypeOmahaDesc},
+            shortdeck: {title:t.roomTypeShortDeck, icon:'🎴', color:'red',    desc:t.roomTypeShortDeckDesc},
+          };
+          const meta = modalMeta[roomTypeModal];
+          const colorMap: Record<string,string> = {
+            violet:'border-violet-500/30 text-violet-400',blue:'border-blue-500/30 text-blue-400',
+            amber:'border-amber-500/30 text-amber-400',emerald:'border-emerald-500/30 text-emerald-400',red:'border-red-500/30 text-red-400'
+          };
+          const btnMap: Record<string,string> = {
+            violet:'bg-violet-500 hover:bg-violet-400',blue:'bg-blue-500 hover:bg-blue-400',
+            amber:'bg-amber-500 hover:bg-amber-400',emerald:'bg-emerald-500 hover:bg-emerald-400',red:'bg-red-500 hover:bg-red-400'
+          };
+
+          const commonTop = (name:string, setName:(v:string)=>void, buyin:string, setBuyin:(v:string)=>void, players:string, setPlayers:(v:string)=>void, blinds:string, setBlinds:(v:string)=>void, vis:string, setVis:(v:string)=>void) => (
+            <>
+              <F label={t.roomNameLabel}>
+                <input value={name} onChange={e=>setName(e.target.value)} placeholder={t.roomNamePlaceholder} className={inp}/>
+              </F>
+              <div className="grid grid-cols-2 gap-3">
+                <F label={t.roomBuyInLabel}><input type="number" value={buyin} onChange={e=>setBuyin(e.target.value)} className={inp}/></F>
+                <F label={t.roomMaxPlayersLabel}><input type="number" value={players} onChange={e=>setPlayers(e.target.value)} className={inp}/></F>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <F label={t.roomBlindsLabel}><input value={blinds} onChange={e=>setBlinds(e.target.value)} className={inp}/></F>
+                <F label={t.roomVisibilityLabel}>{visSel(vis, setVis)}</F>
+              </div>
+            </>
+          );
+
+          let formContent: React.ReactNode = null;
+          let handleSubmit: ()=>void = ()=>{};
+          let submitDisabled = false;
+
+          if (roomTypeModal==='club') {
+            handleSubmit = handleCreateClub; submitDisabled = !clubForm.name;
+            formContent = (<>
+              {commonTop(clubForm.name, v=>setClubForm(p=>({...p,name:v})), clubForm.buy_in_gems, v=>setClubForm(p=>({...p,buy_in_gems:v})), clubForm.max_players, v=>setClubForm(p=>({...p,max_players:v})), clubForm.blinds, v=>setClubForm(p=>({...p,blinds:v})), clubForm.visibility, v=>setClubForm(p=>({...p,visibility:v})))}
+              <F label={t.clubDescLabel}><input value={clubForm.club_description} onChange={e=>setClubForm(p=>({...p,club_description:e.target.value}))} placeholder={t.clubDescPlaceholder} className={inp}/></F>
+              <F label={t.clubMembersLimitLabel}><input type="number" value={clubForm.club_members_limit} onChange={e=>setClubForm(p=>({...p,club_members_limit:e.target.value}))} className={inp}/></F>
+            </>);
+          } else if (roomTypeModal==='mtt') {
+            handleSubmit = handleCreateMTT; submitDisabled = !mttForm.name;
+            formContent = (<>
+              {commonTop(mttForm.name, v=>setMttForm(p=>({...p,name:v})), mttForm.buy_in_gems, v=>setMttForm(p=>({...p,buy_in_gems:v})), mttForm.max_players, v=>setMttForm(p=>({...p,max_players:v})), mttForm.blinds, v=>setMttForm(p=>({...p,blinds:v})), mttForm.visibility, v=>setMttForm(p=>({...p,visibility:v})))}
+              <div className="grid grid-cols-2 gap-3">
+                <F label={t.mttMaxTablesLabel}><input type="number" value={mttForm.mtt_max_tables} onChange={e=>setMttForm(p=>({...p,mtt_max_tables:e.target.value}))} className={inp}/></F>
+                <F label={t.mttStartTimeLabel}><input value={mttForm.mtt_start_time} onChange={e=>setMttForm(p=>({...p,mtt_start_time:e.target.value}))} placeholder={t.mttStartTimePlaceholder} className={inp}/></F>
+              </div>
+              <label className="flex items-center gap-2 text-sm text-zinc-300 cursor-pointer">
+                <input type="checkbox" checked={mttForm.mtt_rebuy_allowed} onChange={e=>setMttForm(p=>({...p,mtt_rebuy_allowed:e.target.checked}))} className="accent-blue-500 w-4 h-4"/>
+                {t.mttRebuyLabel}
+              </label>
+            </>);
+          } else if (roomTypeModal==='sng') {
+            handleSubmit = handleCreateSNG; submitDisabled = !sngForm.name;
+            formContent = (<>
+              {commonTop(sngForm.name, v=>setSngForm(p=>({...p,name:v})), sngForm.buy_in_gems, v=>setSngForm(p=>({...p,buy_in_gems:v})), sngForm.max_players, v=>setSngForm(p=>({...p,max_players:v})), sngForm.blinds, v=>setSngForm(p=>({...p,blinds:v})), sngForm.visibility, v=>setSngForm(p=>({...p,visibility:v})))}
+              <div className="grid grid-cols-2 gap-3">
+                <F label={t.sngStartPlayersLabel}><input type="number" value={sngForm.sng_start_players} onChange={e=>setSngForm(p=>({...p,sng_start_players:e.target.value}))} className={inp}/></F>
+                <F label={t.sngPrizeLabel}><input value={sngForm.sng_prize_structure} onChange={e=>setSngForm(p=>({...p,sng_prize_structure:e.target.value}))} placeholder={t.sngPrizePlaceholder} className={inp}/></F>
+              </div>
+            </>);
+          } else if (roomTypeModal==='omaha') {
+            handleSubmit = handleCreateOmaha; submitDisabled = !omahaForm.name;
+            formContent = (<>
+              {commonTop(omahaForm.name, v=>setOmahaForm(p=>({...p,name:v})), omahaForm.buy_in_gems, v=>setOmahaForm(p=>({...p,buy_in_gems:v})), omahaForm.max_players, v=>setOmahaForm(p=>({...p,max_players:v})), omahaForm.blinds, v=>setOmahaForm(p=>({...p,blinds:v})), omahaForm.visibility, v=>setOmahaForm(p=>({...p,visibility:v})))}
+              <F label={t.omahaVariantLabel}>
+                <select value={omahaForm.omaha_variant} onChange={e=>setOmahaForm(p=>({...p,omaha_variant:e.target.value}))} className={inp}>
+                  <option value="PLO">{t.omahaVariantPLO}</option>
+                  <option value="PLO8">{t.omahaVariantPLO8}</option>
+                  <option value="5cardPLO">{t.omahaVariant5}</option>
+                </select>
+              </F>
+            </>);
+          } else if (roomTypeModal==='shortdeck') {
+            handleSubmit = handleCreateShortDeck; submitDisabled = !shortForm.name;
+            formContent = (<>
+              {commonTop(shortForm.name, v=>setShortForm(p=>({...p,name:v})), shortForm.buy_in_gems, v=>setShortForm(p=>({...p,buy_in_gems:v})), shortForm.max_players, v=>setShortForm(p=>({...p,max_players:v})), shortForm.blinds, v=>setShortForm(p=>({...p,blinds:v})), shortForm.visibility, v=>setShortForm(p=>({...p,visibility:v})))}
+              <F label={t.shortDeckAnteLabel}><input type="number" value={shortForm.short_deck_ante} onChange={e=>setShortForm(p=>({...p,short_deck_ante:e.target.value}))} className={inp}/></F>
+            </>);
+          }
+
+          return (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+              <motion.div initial={{opacity:0,scale:0.9}} animate={{opacity:1,scale:1}} exit={{opacity:0,scale:0.9}}
+                className={`bg-zinc-900 border ${colorMap[meta.color].split(' ')[0]} rounded-2xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto`}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className={`font-bold text-lg flex items-center gap-2 ${colorMap[meta.color].split(' ')[1]}`}>
+                    <span className="text-xl">{meta.icon}</span>{meta.title}
+                  </h3>
+                  <button onClick={()=>setRoomTypeModal(null)} className="p-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800 rounded-lg"><X size={18}/></button>
+                </div>
+                <p className="text-xs text-zinc-500 mb-4">{meta.desc}</p>
+                <div className="space-y-3">{formContent}</div>
+                <div className="flex gap-3 mt-5">
+                  <button onClick={handleSubmit} disabled={submitDisabled}
+                    className={`flex-1 ${btnMap[meta.color]} text-white font-bold py-3 rounded-xl disabled:opacity-30 transition-all`}>
+                    {meta.icon} {t.roomNewBtn}
+                  </button>
+                  <button onClick={()=>setRoomTypeModal(null)} className="flex-1 bg-zinc-800 hover:bg-zinc-700 font-bold py-3 rounded-xl text-sm">{t.cancel}</button>
+                </div>
+              </motion.div>
+            </div>
+          );
+        })()}
       </AnimatePresence>
 
       {/* ── Toast 알림 ── */}

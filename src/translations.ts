@@ -410,6 +410,48 @@ export const translations = {
     // 대리점 수정 모달 하드코딩
     agencyDupNote: "중복 불가 · 비워두면 본사 매출로 집계",
     agencyCommissionNote: "0 ~ 100% · 소수점 2자리 허용",
+
+    // ── 게임방 유형 버튼
+    roomTypeClub: "클럽",
+    roomTypeMTT: "MTT",
+    roomTypeSNG: "SNG",
+    roomTypeOmaha: "Omaha",
+    roomTypeShortDeck: "Short Deck",
+    roomTypeClubDesc: "Private Poker Club — 플레이어를 묶어 관리하는 클럽",
+    roomTypeMTTDesc: "Multi-Table Tournament — 여러 테이블로 진행되는 토너먼트",
+    roomTypeSNGDesc: "Sit & Go — 정해진 인원이 모이면 바로 시작",
+    roomTypeOmahaDesc: "Omaha — 4장 홀카드, PLO / PLO8 / 5-Card 선택",
+    roomTypeShortDeckDesc: "Short Deck — 2~5 제거된 36장 덱으로 진행",
+
+    // 클럽 모달
+    clubDescLabel: "클럽 설명",
+    clubDescPlaceholder: "클럽 소개 문구 (선택)",
+    clubMembersLimitLabel: "최대 회원 수",
+
+    // MTT 모달
+    mttMaxTablesLabel: "최대 테이블 수",
+    mttStartTimeLabel: "시작 예정 시각",
+    mttStartTimePlaceholder: "예: 2026-08-10 20:00",
+    mttRebuyLabel: "리바이 허용",
+
+    // SNG 모달
+    sngStartPlayersLabel: "시작 인원",
+    sngPrizeLabel: "상금 구조 (%)",
+    sngPrizePlaceholder: "예: 50/30/20",
+
+    // Omaha 모달
+    omahaVariantLabel: "변형 선택",
+    omahaVariantPLO: "PLO (팟 리밋 오마하)",
+    omahaVariantPLO8: "PLO8 (하이로우)",
+    omahaVariant5: "5-Card PLO",
+
+    // Short Deck 모달
+    shortDeckAnteLabel: "앤티 (젬)",
+
+    // 공통 모달 필드 (방 생성 공통)
+    roomCreateNewTitle: "게임방 생성",
+    roomTypeLabel2: "유형",
+    roomNewBtn: "생성",
   },
 
   en: {
@@ -811,6 +853,48 @@ export const translations = {
     gcNoRoom: "User is not currently in a room",
     agencyDupNote: "Unique · Leave blank to count as HQ sales",
     agencyCommissionNote: "0 ~ 100% · Up to 2 decimal places",
+
+    // ── Room type buttons
+    roomTypeClub: "Club",
+    roomTypeMTT: "MTT",
+    roomTypeSNG: "SNG",
+    roomTypeOmaha: "Omaha",
+    roomTypeShortDeck: "Short Deck",
+    roomTypeClubDesc: "Private Poker Club — manage players in a private club",
+    roomTypeMTTDesc: "Multi-Table Tournament — tournament across multiple tables",
+    roomTypeSNGDesc: "Sit & Go — starts when the set number of players join",
+    roomTypeOmahaDesc: "Omaha — 4 hole cards, PLO / PLO8 / 5-Card variants",
+    roomTypeShortDeckDesc: "Short Deck — 36-card deck with 2–5 removed",
+
+    // Club modal
+    clubDescLabel: "Club Description",
+    clubDescPlaceholder: "Club intro (optional)",
+    clubMembersLimitLabel: "Max Members",
+
+    // MTT modal
+    mttMaxTablesLabel: "Max Tables",
+    mttStartTimeLabel: "Scheduled Start",
+    mttStartTimePlaceholder: "e.g. 2026-08-10 20:00",
+    mttRebuyLabel: "Allow Rebuy",
+
+    // SNG modal
+    sngStartPlayersLabel: "Start Players",
+    sngPrizeLabel: "Prize Structure (%)",
+    sngPrizePlaceholder: "e.g. 50/30/20",
+
+    // Omaha modal
+    omahaVariantLabel: "Variant",
+    omahaVariantPLO: "PLO (Pot-Limit Omaha)",
+    omahaVariantPLO8: "PLO8 (Hi-Lo)",
+    omahaVariant5: "5-Card PLO",
+
+    // Short Deck modal
+    shortDeckAnteLabel: "Ante (Gems)",
+
+    // Common
+    roomCreateNewTitle: "Create Game Room",
+    roomTypeLabel2: "Type",
+    roomNewBtn: "Create",
   },
 
   zh: {
@@ -1212,5 +1296,47 @@ export const translations = {
     gcNoRoom: "该用户当前不在任何房间",
     agencyDupNote: "不可重复 · 留空则计入总部销售额",
     agencyCommissionNote: "0 ~ 100% · 支持小数点后2位",
+
+    // ── 房间类型按钮
+    roomTypeClub: "俱乐部",
+    roomTypeMTT: "MTT",
+    roomTypeSNG: "SNG",
+    roomTypeOmaha: "奥马哈",
+    roomTypeShortDeck: "短牌",
+    roomTypeClubDesc: "私人扑克俱乐部 — 将玩家集中管理的俱乐部",
+    roomTypeMTTDesc: "多桌锦标赛 — 跨多张桌子进行的锦标赛",
+    roomTypeSNGDesc: "即开即打 — 达到设定人数后立即开始",
+    roomTypeOmahaDesc: "奥马哈 — 4张底牌，PLO / PLO8 / 5张选择",
+    roomTypeShortDeckDesc: "短牌 — 去掉2~5的36张牌进行游戏",
+
+    // 俱乐部模态框
+    clubDescLabel: "俱乐部介绍",
+    clubDescPlaceholder: "俱乐部简介（可选）",
+    clubMembersLimitLabel: "最大会员数",
+
+    // MTT模态框
+    mttMaxTablesLabel: "最大桌数",
+    mttStartTimeLabel: "预计开始时间",
+    mttStartTimePlaceholder: "例: 2026-08-10 20:00",
+    mttRebuyLabel: "允许重买",
+
+    // SNG模态框
+    sngStartPlayersLabel: "开始人数",
+    sngPrizeLabel: "奖金结构（%）",
+    sngPrizePlaceholder: "例: 50/30/20",
+
+    // 奥马哈模态框
+    omahaVariantLabel: "变体选择",
+    omahaVariantPLO: "PLO（底池限注奥马哈）",
+    omahaVariantPLO8: "PLO8（高低牌）",
+    omahaVariant5: "5张PLO",
+
+    // 短牌模态框
+    shortDeckAnteLabel: "前注（筹码）",
+
+    // 公共
+    roomCreateNewTitle: "创建游戏房间",
+    roomTypeLabel2: "类型",
+    roomNewBtn: "创建",
   }
 };

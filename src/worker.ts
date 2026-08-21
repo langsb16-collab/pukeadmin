@@ -437,9 +437,45 @@ app.post('/api/admin/rooms/create', async c => {
     const b = await c.req.json()
     if (!b.name) return err(c,'이름 필수')
     const id = crypto.randomUUID()
+    const type = b.type || 'tournament'
+
+    // 공통 INSERT
     await c.env.DB.prepare(
-      'INSERT INTO game_rooms(id,name,type,buy_in_gems,min_entry_gems,max_players,blinds,visibility,password,created_by,status) VALUES(?,?,?,?,?,?,?,?,?,?,?)'
-    ).bind(id,b.name,b.type||'tournament',b.buy_in_gems||100000,b.buy_in_gems||100000,b.max_players||9,b.blinds||'100/200',b.visibility||'public',b.password||'','admin','open').run()
+      `INSERT INTO game_rooms(
+        id,name,type,buy_in_gems,min_entry_gems,max_players,blinds,visibility,password,created_by,status,
+        club_description,club_members_limit,
+        mtt_max_tables,mtt_start_time,mtt_rebuy_allowed,
+        sng_start_players,sng_prize_structure,
+        omaha_variant,
+        short_deck_ante
+      ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    ).bind(
+      id,
+      b.name,
+      type,
+      b.buy_in_gems   ?? 100000,
+      b.buy_in_gems   ?? 100000,
+      b.max_players   ?? 9,
+      b.blinds        ?? '100/200',
+      b.visibility    ?? 'public',
+      b.password      ?? '',
+      'admin',
+      'open',
+      // club
+      b.club_description   ?? '',
+      b.club_members_limit ?? 50,
+      // mtt
+      b.mtt_max_tables     ?? 4,
+      b.mtt_start_time     ?? '',
+      b.mtt_rebuy_allowed  ? 1 : 0,
+      // sng
+      b.sng_start_players  ?? 6,
+      b.sng_prize_structure ?? '50/30/20',
+      // omaha
+      b.omaha_variant      ?? 'PLO',
+      // short deck
+      b.short_deck_ante    ?? 100
+    ).run()
     return ok(c,{success:true,id})
   } catch(e:any){ return err(c,e.message,500) }
 })
