@@ -756,4 +756,89 @@ app.get('/api/admin/stats', async c => {
   } catch(e:any){ return err(c,e.message,500) }
 })
 
+// ─────────────────────────────────────────────
+// 방문자 추적 API (공개 - puke365.biz → D1 기록)
+// ─────────────────────────────────────────────
+app.post('/api/track', async c => {
+  try {
+    const body = await c.req.json().catch(()=>({})) as any
+    const visitorId: string = (body.visitor_id && typeof body.visitor_id==='string')
+      ? body.visitor_id.slice(0,64)
+      : 'anon-' + Math.random().toString(36).slice(2)
+
+    // Asia/Seoul 기준 날짜 (YYYY-MM-DD)
+    const seoulDate = new Date(new Date().toLocaleString('en-CA',{timeZone:'Asia/Seoul'})).toISOString().slice(0,10)
+
+    const ua = c.req.header('User-Agent')||''
+    const isMobile = /Android|iPhone|iPad|iPod|Mobile|webOS/i.test(ua)
+    const isTablet = /iPad|Tablet/i.test(ua)
+    const device = isTablet ? 'tablet' : isMobile ? 'mobile' : 'pc'
+
+    const ref = (body.referrer && typeof body.referrer==='string') ? body.referrer.slice(0,255) : (c.req.header('Referer')||'')
+    let source = 'direct'
+    if (ref) {
+      if (/google\./i.test(ref)) source='google'
+      else if (/naver\./i.test(ref)) source='naver'
+      else if (/daum\./i.test(ref)||/kakao\./i.test(ref)) source='daum'
+      else if (/bing\./i.test(ref)) source='bing'
+      else if (/facebook\./i.test(ref)||/fb\./i.test(ref)) source='facebook'
+      else if (/instagram\./i.test(ref)) source='instagram'
+      else if (/youtube\./i.test(ref)) source='youtube'
+      else source='other'
+    }
+    const page = (body.page && typeof body.page==='string') ? body.page.slice(0,255) : '/'
+
+    // visitor_id + visit_date 중복 허용 (페이지별 기록 보존)
+    // 순방문자는 stats API에서 DISTINCT로 계산
+    await c.env.DB.prepare(
+      'INSERT INTO visitor_logs(visitor_id,visit_date,device_type,referrer,source,page) VALUES(?,?,?,?,?,?)'
+    ).bind(visitorId, seoulDate, device, ref, source, page).run()
+
+    return ok(c,{success:true})
+  } catch(e:any){ return ok(c,{success:false}) }  // 추적 실패해도 200 반환
+})
+
+// ─────────────────────────────────────────────
+// 방문자 통계 API (관리자 전용)
+// ─────────────────────────────────────────────
+app.get('/api/admin/visitor-stats', async c => {
+  try {
+    // Asia/Seoul 오늘 날짜
+    const seoulToday = new Date(new Date().toLocaleString('en-CA',{timeZone:'Asia/Seoul'})).toISOString().slice(0,10)
+    const date = c.req.query('date') || seoulToday
+
+    // 일일 순방문자 (visitor_id 기준 DISTINCT)
+    const total = await c.env.DB.prepare(
+      'SELECT COUNT(DISTINCT visitor_id) as cnt FROM visitor_logs WHERE visit_date=?'
+    ).bind(date).first() as any
+
+    const mobile = await c.env.DB.prepare(
+      "SELECT COUNT(DISTINCT visitor_id) as cnt FROM visitor_logs WHERE visit_date=? AND device_type='mobile'"
+    ).bind(date).first() as any
+
+    const tablet = await c.env.DB.prepare(
+      "SELECT COUNT(DISTINCT visitor_id) as cnt FROM visitor_logs WHERE visit_date=? AND device_type='tablet'"
+    ).bind(date).first() as any
+
+    const pc = await c.env.DB.prepare(
+      "SELECT COUNT(DISTINCT visitor_id) as cnt FROM visitor_logs WHERE visit_date=? AND device_type='pc'"
+    ).bind(date).first() as any
+
+    // 유입경로 집계 (visitor_id 기준)
+    const {results: sources} = await c.env.DB.prepare(
+      'SELECT source, COUNT(DISTINCT visitor_id) as cnt FROM visitor_logs WHERE visit_date=? GROUP BY source ORDER BY cnt DESC'
+    ).bind(date).all() as any
+
+    return ok(c,{
+      date,
+      today: seoulToday,
+      total: total?.cnt||0,
+      mobile: mobile?.cnt||0,
+      tablet: tablet?.cnt||0,
+      pc: pc?.cnt||0,
+      sources: sources||[],
+    })
+  } catch(e:any){ return err(c,e.message,500) }
+})
+
 export default app

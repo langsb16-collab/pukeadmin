@@ -4,7 +4,7 @@ import {
   Coins, Activity, LayoutDashboard, ChevronRight, Globe, ChevronDown,
   Wallet, Building2, CreditCard, Bot, History, Bell, Settings, X,
   CheckCircle, XCircle, PlusCircle, MinusCircle, UserCheck, Trash2,
-  TrendingUp, AlertCircle, Edit3, Save
+  TrendingUp, AlertCircle, Edit3, Save, Calendar, Monitor, Smartphone
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import axios from "axios";
@@ -76,6 +76,188 @@ const StatCard = ({ icon:Icon,label,value,sub,color,urgent,waitingLabel }:{icon:
     {sub && <p className="text-xs text-zinc-500 mt-1">{sub}</p>}
   </div>
 );
+
+// ─── VisitorStats 미니 대시보드 ──────────────────────────────────
+interface VisitorStat { date:string; today:string; total:number; mobile:number; tablet:number; pc:number; }
+
+function VisitorStats() {
+  const today = () => {
+    const d = new Date(new Date().toLocaleString('en-CA',{timeZone:'Asia/Seoul'}));
+    return d.toISOString().slice(0,10);
+  };
+  const [selDate, setSelDate] = useState<string>(today());
+  const [stat, setStat] = useState<VisitorStat|null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showCal, setShowCal] = useState(false);
+  const [calYear, setCalYear] = useState(() => parseInt(today().slice(0,4)));
+  const [calMonth, setCalMonth] = useState(() => parseInt(today().slice(5,7)));
+  const calRef = useRef<HTMLDivElement>(null);
+
+  const fetchStat = useCallback(async (date:string) => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/admin/visitor-stats?date=${date}`);
+      if (res.ok) { const d = await res.json(); setStat(d as VisitorStat); }
+    } catch(_){}
+    setLoading(false);
+  },[]);
+
+  useEffect(()=>{ fetchStat(selDate); },[selDate, fetchStat]);
+
+  // 60초 자동 갱신 (오늘 날짜인 경우만)
+  useEffect(()=>{
+    const t = today();
+    if (selDate !== t) return;
+    const id = setInterval(()=>fetchStat(t), 60000);
+    return ()=>clearInterval(id);
+  },[selDate, fetchStat]);
+
+  // 달력 외부 클릭 닫기
+  useEffect(()=>{
+    if (!showCal) return;
+    const handler = (e:MouseEvent)=>{
+      if (calRef.current && !calRef.current.contains(e.target as Node)) setShowCal(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return ()=>document.removeEventListener('mousedown', handler);
+  },[showCal]);
+
+  const fmt = (d:string) => {
+    const [,m,day] = d.split('-');
+    return `${parseInt(m)}.${parseInt(day)}`;
+  };
+
+  // 달력 렌더
+  const daysInMonth = (y:number, m:number) => new Date(y,m,0).getDate();
+  const firstDayOfWeek = (y:number, m:number) => new Date(y,m-1,1).getDay();
+
+  const handleDateClick = (y:number, m:number, d:number) => {
+    const mm = String(m).padStart(2,'0');
+    const dd = String(d).padStart(2,'0');
+    const dateStr = `${y}-${mm}-${dd}`;
+    setSelDate(dateStr);
+    setShowCal(false);
+  };
+
+  const prevMonth = () => {
+    if (calMonth===1){ setCalMonth(12); setCalYear(y=>y-1); }
+    else setCalMonth(m=>m-1);
+  };
+  const nextMonth = () => {
+    if (calMonth===12){ setCalMonth(1); setCalYear(y=>y+1); }
+    else setCalMonth(m=>m+1);
+  };
+
+  const isToday = selDate === today();
+  const mobileTotal = stat ? stat.mobile + stat.tablet : 0;
+
+  return (
+    <div className="relative" ref={calRef}>
+      {/* 미니 대시보드 카드 */}
+      <div className="bg-zinc-900/70 border border-zinc-700 rounded-xl px-4 py-2.5 flex items-center gap-4 min-w-0 flex-wrap sm:flex-nowrap">
+        {/* 날짜 버튼 */}
+        <button
+          onClick={()=>setShowCal(!showCal)}
+          className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 transition-colors font-medium text-sm whitespace-nowrap"
+        >
+          <Calendar size={15} className="shrink-0"/>
+          <span>{isToday ? `오늘 ${fmt(selDate)}` : fmt(selDate)}</span>
+        </button>
+        {/* 구분선 */}
+        <div className="w-px h-5 bg-zinc-700 hidden sm:block shrink-0"/>
+        {/* 방문자 수 */}
+        {loading ? (
+          <span className="text-zinc-500 text-xs">로딩중…</span>
+        ) : stat ? (
+          <div className="flex items-center gap-3 text-sm">
+            <span className="text-white font-semibold whitespace-nowrap">
+              {stat.total.toLocaleString()}<span className="text-zinc-400 font-normal text-xs ml-0.5">명</span>
+            </span>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400 whitespace-nowrap">
+              <Smartphone size={12} className="text-emerald-400 shrink-0"/>
+              <span className="text-emerald-300">{mobileTotal.toLocaleString()}</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400 whitespace-nowrap">
+              <Monitor size={12} className="text-blue-400 shrink-0"/>
+              <span className="text-blue-300">{stat.pc.toLocaleString()}</span>
+            </div>
+          </div>
+        ) : (
+          <span className="text-zinc-600 text-xs">-</span>
+        )}
+      </div>
+
+      {/* 달력 팝업 */}
+      {showCal && (
+        <div className="absolute right-0 top-full mt-2 z-50 bg-zinc-900 border border-zinc-700 rounded-2xl shadow-2xl p-4 w-72">
+          {/* 달력 헤더 */}
+          <div className="flex items-center justify-between mb-3">
+            <button onClick={prevMonth} className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors">
+              <ChevronRight size={16} className="rotate-180"/>
+            </button>
+            <span className="text-sm font-semibold text-white">{calYear}년 {calMonth}월</span>
+            <button onClick={nextMonth} className="p-1.5 hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-white transition-colors">
+              <ChevronRight size={16}/>
+            </button>
+          </div>
+          {/* 오늘로 */}
+          <button
+            onClick={()=>{
+              const t=today();
+              const y=parseInt(t.slice(0,4)); const m=parseInt(t.slice(5,7));
+              setCalYear(y); setCalMonth(m); setSelDate(t); setShowCal(false);
+            }}
+            className="w-full text-xs text-amber-400 hover:text-amber-300 mb-3 text-right pr-1 transition-colors"
+          >최근 일</button>
+          {/* 요일 헤더 */}
+          <div className="grid grid-cols-7 text-center mb-1">
+            {['일','월','화','수','목','금','토'].map((d,i)=>(
+              <span key={d} className={cn("text-xs font-medium py-1", i===0?"text-red-400":i===6?"text-blue-400":"text-zinc-500")}>{d}</span>
+            ))}
+          </div>
+          {/* 날짜 */}
+          <div className="grid grid-cols-7 gap-y-0.5">
+            {Array.from({length: firstDayOfWeek(calYear,calMonth)}).map((_,i)=>(
+              <span key={'e'+i}/>
+            ))}
+            {Array.from({length: daysInMonth(calYear,calMonth)}).map((_,i)=>{
+              const d = i+1;
+              const mm = String(calMonth).padStart(2,'0');
+              const dd = String(d).padStart(2,'0');
+              const dateStr = `${calYear}-${mm}-${dd}`;
+              const isSel = dateStr === selDate;
+              const isTdy = dateStr === today();
+              const dayOfWeek = (firstDayOfWeek(calYear,calMonth)+i)%7;
+              return (
+                <button key={d} onClick={()=>handleDateClick(calYear,calMonth,d)}
+                  className={cn(
+                    "text-sm w-8 h-8 mx-auto rounded-full transition-all flex items-center justify-center",
+                    isSel ? "bg-amber-500 text-black font-bold" :
+                    isTdy ? "bg-emerald-500/20 text-emerald-400 font-semibold ring-1 ring-emerald-500/50" :
+                    dayOfWeek===0 ? "text-red-400 hover:bg-zinc-800" :
+                    dayOfWeek===6 ? "text-blue-400 hover:bg-zinc-800" :
+                    "text-zinc-300 hover:bg-zinc-800"
+                  )}
+                >{d}</button>
+              );
+            })}
+          </div>
+          {/* 선택 날짜 통계 미리보기 */}
+          {stat && (
+            <div className="mt-3 pt-3 border-t border-zinc-800 text-xs text-zinc-400 flex items-center justify-between">
+              <span className="text-zinc-500">{selDate}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white font-semibold">{stat.total.toLocaleString()}명</span>
+                <span className="text-emerald-400 flex items-center gap-0.5"><Smartphone size={10}/>{mobileTotal.toLocaleString()}</span>
+                <span className="text-blue-400 flex items-center gap-0.5"><Monitor size={10}/>{stat.pc.toLocaleString()}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -766,6 +948,7 @@ export default function App() {
             <p className="text-zinc-500 text-sm">{t.monitoring}</p>
           </div>
           <div className="flex items-center gap-3">
+            <VisitorStats />
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={16}/>
               <input type="text" placeholder={t.search} value={searchQuery} onChange={e=>setSearchQuery(e.target.value)}
