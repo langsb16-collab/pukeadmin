@@ -977,9 +977,6 @@ export default function App() {
                 </motion.div>
               )}</AnimatePresence>
             </div>
-            <button onClick={fetchAll} className="p-2.5 bg-zinc-900 border border-zinc-800 rounded-full hover:bg-zinc-800">
-              <RefreshCw size={18} className="text-zinc-400"/>
-            </button>
             {/* 상단 로그아웃 버튼 */}
             <button onClick={handleLogout}
               className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-full hover:bg-red-500/10 hover:border-red-500/30 hover:text-red-400 text-zinc-400 transition-all text-sm font-medium"
