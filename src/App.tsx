@@ -82,8 +82,15 @@ interface VisitorStat { date:string; today:string; total:number; mobile:number; 
 
 function VisitorStats() {
   const today = () => {
-    const d = new Date(new Date().toLocaleString('en-CA',{timeZone:'Asia/Seoul'}));
-    return d.toISOString().slice(0,10);
+    // en-CA 로케일 방식은 일부 모바일 브라우저에서 Invalid Date 유발
+    // UTC+9 오프셋을 직접 더해 안전하게 계산
+    const now = new Date();
+    const seoulMs = now.getTime() + (9 * 60 * 60 * 1000);
+    const d = new Date(seoulMs);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth()+1).padStart(2,'0');
+    const day = String(d.getUTCDate()).padStart(2,'0');
+    return `${y}-${m}-${day}`;
   };
   const [selDate, setSelDate] = useState<string>(today());
   const [stat, setStat] = useState<VisitorStat|null>(null);

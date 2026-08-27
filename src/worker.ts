@@ -766,8 +766,9 @@ app.post('/api/track', async c => {
       ? body.visitor_id.slice(0,64)
       : 'anon-' + Math.random().toString(36).slice(2)
 
-    // Asia/Seoul 기준 날짜 (YYYY-MM-DD)
-    const seoulDate = new Date(new Date().toLocaleString('en-CA',{timeZone:'Asia/Seoul'})).toISOString().slice(0,10)
+    // Asia/Seoul 기준 날짜 (YYYY-MM-DD) — UTC+9 직접 계산
+    const _sd = new Date(Date.now() + 9*60*60*1000)
+    const seoulDate = `${_sd.getUTCFullYear()}-${String(_sd.getUTCMonth()+1).padStart(2,'0')}-${String(_sd.getUTCDate()).padStart(2,'0')}`
 
     const ua = c.req.header('User-Agent')||''
     const isMobile = /Android|iPhone|iPad|iPod|Mobile|webOS/i.test(ua)
@@ -803,8 +804,9 @@ app.post('/api/track', async c => {
 // ─────────────────────────────────────────────
 app.get('/api/admin/visitor-stats', async c => {
   try {
-    // Asia/Seoul 오늘 날짜
-    const seoulToday = new Date(new Date().toLocaleString('en-CA',{timeZone:'Asia/Seoul'})).toISOString().slice(0,10)
+    // Asia/Seoul 오늘 날짜 — UTC+9 직접 계산
+    const _st = new Date(Date.now() + 9*60*60*1000)
+    const seoulToday = `${_st.getUTCFullYear()}-${String(_st.getUTCMonth()+1).padStart(2,'0')}-${String(_st.getUTCDate()).padStart(2,'0')}`
     const date = c.req.query('date') || seoulToday
 
     // 일일 순방문자 (visitor_id 기준 DISTINCT)
