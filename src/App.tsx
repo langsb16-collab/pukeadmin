@@ -187,9 +187,13 @@ function VisitorStats() {
           className="flex items-center gap-1.5 text-amber-400 hover:text-amber-300 transition-colors font-medium text-sm whitespace-nowrap"
         >
           <Calendar size={15} className="shrink-0"/>
-          <span>{isToday ? `오늘 ${fmt(selDate)}` : fmt(selDate)}</span>
-          {isToday && (
-            <span className="text-zinc-400 font-mono text-xs tracking-wider">{bjTime}</span>
+          {isToday ? (
+            <>
+              <span>오늘</span>
+              <span className="text-zinc-400 font-mono text-xs tracking-wider">{bjTime}</span>
+            </>
+          ) : (
+            <span>{fmt(selDate)}</span>
           )}
         </button>
         {/* 구분선 */}
