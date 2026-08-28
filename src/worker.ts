@@ -756,6 +756,22 @@ app.get('/api/admin/stats', async c => {
   } catch(e:any){ return err(c,e.message,500) }
 })
 
+// 충전 요청 삭제 (관리자)
+app.delete('/api/admin/recharge/:id', async c => {
+  try {
+    await c.env.DB.prepare('DELETE FROM recharge_requests WHERE id=?').bind(c.req.param('id')).run()
+    return ok(c,{success:true})
+  } catch(e:any){ return err(c,e.message,500) }
+})
+
+// 환전 요청 삭제 (관리자)
+app.delete('/api/admin/exchange/:id', async c => {
+  try {
+    await c.env.DB.prepare('DELETE FROM exchange_requests WHERE id=?').bind(c.req.param('id')).run()
+    return ok(c,{success:true})
+  } catch(e:any){ return err(c,e.message,500) }
+})
+
 // ─────────────────────────────────────────────
 // 방문자 추적 API (공개 - puke365.biz → D1 기록)
 // ─────────────────────────────────────────────

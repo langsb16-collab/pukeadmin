@@ -518,6 +518,15 @@ export default function App() {
     if (!rejectModal) return;
     await axios.post(`${API}/api/admin/exchange/reject`,{id:rejectModal.id,memo:rejectMemo});
     setRejectModal(null); setRejectMemo(""); fetchAll();
+  }
+  // ── 충전/환전 삭제
+  const handleRechargeDelete = async (id:number) => {
+    if (!window.confirm('이 충전 내역을 삭제하시겠습니까?')) return;
+    await axios.delete(`${API}/api/admin/recharge/${id}`); fetchAll();
+  }
+  const handleExchangeDelete = async (id:number) => {
+    if (!window.confirm('이 환전 내역을 삭제하시겠습니까?')) return;
+    await axios.delete(`${API}/api/admin/exchange/${id}`); fetchAll();
   };
 
   // ── 봇 추가
@@ -1014,6 +1023,7 @@ export default function App() {
                         <div className="flex gap-2">
                           <button onClick={()=>handleRechargeApprove(r.id)} className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={14}/>{t.approve}</button>
                           <button onClick={()=>{setRejectModal({type:'recharge',id:r.id});setRejectMemo("");}} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={14}/>{t.reject}</button>
+                          <button onClick={()=>handleRechargeDelete(r.id)} className="p-1.5 bg-zinc-700/50 text-zinc-400 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors" title="삭제"><Trash2 size={14}/></button>
                         </div>
                       </div>
                     ))}
@@ -1034,6 +1044,7 @@ export default function App() {
                         <div className="flex gap-2">
                           <button onClick={()=>handleExchangeApprove(r.id)} className="px-3 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-lg text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={14}/>{t.approve}</button>
                           <button onClick={()=>{setRejectModal({type:'exchange',id:r.id});setRejectMemo("");}} className="px-3 py-1.5 bg-red-500/20 text-red-400 rounded-lg text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={14}/>{t.reject}</button>
+                          <button onClick={()=>handleExchangeDelete(r.id)} className="p-1.5 bg-zinc-700/50 text-zinc-400 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition-colors" title="삭제"><Trash2 size={14}/></button>
                         </div>
                       </div>
                     ))}
@@ -1176,12 +1187,16 @@ export default function App() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            {r.status==='pending'?(
-                              <div className="flex gap-1">
-                                <button onClick={()=>handleRechargeApprove(r.id)} className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={12}/>{t.approve}</button>
-                                <button onClick={()=>{setRejectModal({type:'recharge',id:r.id});setRejectMemo("");}} className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={12}/>{t.reject}</button>
-                              </div>
-                            ):<span className="text-zinc-600 text-xs">{r.admin_memo||'-'}</span>}
+                            <div className="flex gap-1 items-center">
+                              {r.status==='pending'&&(
+                                <>
+                                  <button onClick={()=>handleRechargeApprove(r.id)} className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={12}/>{t.approve}</button>
+                                  <button onClick={()=>{setRejectModal({type:'recharge',id:r.id});setRejectMemo("");}} className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={12}/>{t.reject}</button>
+                                </>
+                              )}
+                              {r.status!=='pending'&&<span className="text-zinc-600 text-xs">{r.admin_memo||'-'}</span>}
+                              <button onClick={()=>handleRechargeDelete(r.id)} className="ml-1 p-1 bg-zinc-700/50 text-zinc-400 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors" title="삭제"><Trash2 size={13}/></button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -1214,12 +1229,16 @@ export default function App() {
                             </span>
                           </td>
                           <td className="px-4 py-3">
-                            {r.status==='pending'?(
-                              <div className="flex gap-1">
-                                <button onClick={()=>handleExchangeApprove(r.id)} className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={12}/>{t.approve}</button>
-                                <button onClick={()=>{setRejectModal({type:'exchange',id:r.id});setRejectMemo("");}} className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={12}/>{t.reject}</button>
-                              </div>
-                            ):<span className="text-zinc-600 text-xs">{r.admin_memo||'-'}</span>}
+                            <div className="flex gap-1 items-center">
+                              {r.status==='pending'&&(
+                                <>
+                                  <button onClick={()=>handleExchangeApprove(r.id)} className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded text-xs font-bold hover:bg-emerald-500/30 flex items-center gap-1"><CheckCircle size={12}/>{t.approve}</button>
+                                  <button onClick={()=>{setRejectModal({type:'exchange',id:r.id});setRejectMemo("");}} className="px-2 py-1 bg-red-500/20 text-red-400 rounded text-xs font-bold hover:bg-red-500/30 flex items-center gap-1"><XCircle size={12}/>{t.reject}</button>
+                                </>
+                              )}
+                              {r.status!=='pending'&&<span className="text-zinc-600 text-xs">{r.admin_memo||'-'}</span>}
+                              <button onClick={()=>handleExchangeDelete(r.id)} className="ml-1 p-1 bg-zinc-700/50 text-zinc-400 rounded hover:bg-red-500/20 hover:text-red-400 transition-colors" title="삭제"><Trash2 size={13}/></button>
+                            </div>
                           </td>
                         </tr>
                       ))}
