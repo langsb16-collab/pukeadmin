@@ -88,10 +88,20 @@ function getBJDate(): string {
   const day = String(d.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+// 중국 북경 기준 시각 HH:MM:SS (UTC+8)
+function getBJTime(): string {
+  const d = new Date(Date.now() + 8 * 60 * 60 * 1000);
+  const h = String(d.getUTCHours()).padStart(2, '0');
+  const mi = String(d.getUTCMinutes()).padStart(2, '0');
+  const s = String(d.getUTCSeconds()).padStart(2, '0');
+  return `${h}:${mi}:${s}`;
+}
 
 function VisitorStats() {
   // nowBJ: 1분마다 갱신 → isToday 실시간 반영 + 자정 날짜 전환 감지
   const [nowBJ, setNowBJ] = useState<string>(getBJDate);
+  // bjTime: 1초마다 갱신 → 실시간 북경 시각 표시
+  const [bjTime, setBjTime] = useState<string>(getBJTime);
   const [selDate, setSelDate] = useState<string>(getBJDate);
   const [stat, setStat] = useState<VisitorStat|null>(null);
   const [loading, setLoading] = useState(false);
@@ -100,9 +110,13 @@ function VisitorStats() {
   const [calMonth, setCalMonth] = useState(() => parseInt(getBJDate().slice(5,7)));
   const calRef = useRef<HTMLDivElement>(null);
 
-  // 1분마다 북경 현재 날짜 갱신 (자정 넘으면 날짜 자동 전환)
+  // 1초마다 북경 시각 갱신 (실시간 시계)
   useEffect(()=>{
-    const id = setInterval(()=> setNowBJ(getBJDate()), 60000);
+    const id = setInterval(()=>{
+      setBjTime(getBJTime());
+      // 분이 바뀔 때 날짜도 갱신 (자정 전환 감지)
+      setNowBJ(getBJDate());
+    }, 1000);
     return ()=>clearInterval(id);
   },[]);
 
@@ -174,6 +188,9 @@ function VisitorStats() {
         >
           <Calendar size={15} className="shrink-0"/>
           <span>{isToday ? `오늘 ${fmt(selDate)}` : fmt(selDate)}</span>
+          {isToday && (
+            <span className="text-zinc-400 font-mono text-xs tracking-wider">{bjTime}</span>
+          )}
         </button>
         {/* 구분선 */}
         <div className="w-px h-5 bg-zinc-700 hidden sm:block shrink-0"/>
