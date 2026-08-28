@@ -80,25 +80,31 @@ const StatCard = ({ icon:Icon,label,value,sub,color,urgent,waitingLabel }:{icon:
 // ─── VisitorStats 미니 대시보드 ──────────────────────────────────
 interface VisitorStat { date:string; today:string; total:number; mobile:number; tablet:number; pc:number; }
 
+// 중국 북경 기준 날짜 (UTC+8) — 모듈 레벨 헬퍼 (모바일 호환)
+function getBJDate(): string {
+  const d = new Date(Date.now() + 8 * 60 * 60 * 1000);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function VisitorStats() {
-  const today = () => {
-    // en-CA 로케일 방식은 일부 모바일 브라우저에서 Invalid Date 유발
-    // 중국 북경 기준 (UTC+8) 오프셋을 직접 더해 안전하게 계산
-    const now = new Date();
-    const seoulMs = now.getTime() + (8 * 60 * 60 * 1000);
-    const d = new Date(seoulMs);
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth()+1).padStart(2,'0');
-    const day = String(d.getUTCDate()).padStart(2,'0');
-    return `${y}-${m}-${day}`;
-  };
-  const [selDate, setSelDate] = useState<string>(today());
+  // nowBJ: 1분마다 갱신 → isToday 실시간 반영 + 자정 날짜 전환 감지
+  const [nowBJ, setNowBJ] = useState<string>(getBJDate);
+  const [selDate, setSelDate] = useState<string>(getBJDate);
   const [stat, setStat] = useState<VisitorStat|null>(null);
   const [loading, setLoading] = useState(false);
   const [showCal, setShowCal] = useState(false);
-  const [calYear, setCalYear] = useState(() => parseInt(today().slice(0,4)));
-  const [calMonth, setCalMonth] = useState(() => parseInt(today().slice(5,7)));
+  const [calYear, setCalYear] = useState(() => parseInt(getBJDate().slice(0,4)));
+  const [calMonth, setCalMonth] = useState(() => parseInt(getBJDate().slice(5,7)));
   const calRef = useRef<HTMLDivElement>(null);
+
+  // 1분마다 북경 현재 날짜 갱신 (자정 넘으면 날짜 자동 전환)
+  useEffect(()=>{
+    const id = setInterval(()=> setNowBJ(getBJDate()), 60000);
+    return ()=>clearInterval(id);
+  },[]);
 
   const fetchStat = useCallback(async (date:string) => {
     setLoading(true);
@@ -111,13 +117,12 @@ function VisitorStats() {
 
   useEffect(()=>{ fetchStat(selDate); },[selDate, fetchStat]);
 
-  // 60초 자동 갱신 (오늘 날짜인 경우만)
+  // 30초 자동 갱신 (오늘 날짜인 경우만 — 실시간 방문자 반영)
   useEffect(()=>{
-    const t = today();
-    if (selDate !== t) return;
-    const id = setInterval(()=>fetchStat(t), 60000);
+    if (selDate !== nowBJ) return;
+    const id = setInterval(()=>fetchStat(nowBJ), 30000);
     return ()=>clearInterval(id);
-  },[selDate, fetchStat]);
+  },[selDate, nowBJ, fetchStat]);
 
   // 달력 외부 클릭 닫기
   useEffect(()=>{
@@ -155,7 +160,7 @@ function VisitorStats() {
     else setCalMonth(m=>m+1);
   };
 
-  const isToday = selDate === today();
+  const isToday = selDate === nowBJ;
   const mobileTotal = stat ? stat.mobile + stat.tablet : 0;
 
   return (
@@ -210,7 +215,7 @@ function VisitorStats() {
           {/* 오늘로 */}
           <button
             onClick={()=>{
-              const t=today();
+              const t=getBJDate();
               const y=parseInt(t.slice(0,4)); const m=parseInt(t.slice(5,7));
               setCalYear(y); setCalMonth(m); setSelDate(t); setShowCal(false);
             }}
@@ -233,7 +238,7 @@ function VisitorStats() {
               const dd = String(d).padStart(2,'0');
               const dateStr = `${calYear}-${mm}-${dd}`;
               const isSel = dateStr === selDate;
-              const isTdy = dateStr === today();
+              const isTdy = dateStr === nowBJ;
               const dayOfWeek = (firstDayOfWeek(calYear,calMonth)+i)%7;
               return (
                 <button key={d} onClick={()=>handleDateClick(calYear,calMonth,d)}
