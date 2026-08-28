@@ -83,9 +83,9 @@ interface VisitorStat { date:string; today:string; total:number; mobile:number; 
 function VisitorStats() {
   const today = () => {
     // en-CA 로케일 방식은 일부 모바일 브라우저에서 Invalid Date 유발
-    // UTC+9 오프셋을 직접 더해 안전하게 계산
+    // 중국 북경 기준 (UTC+8) 오프셋을 직접 더해 안전하게 계산
     const now = new Date();
-    const seoulMs = now.getTime() + (9 * 60 * 60 * 1000);
+    const seoulMs = now.getTime() + (8 * 60 * 60 * 1000);
     const d = new Date(seoulMs);
     const y = d.getUTCFullYear();
     const m = String(d.getUTCMonth()+1).padStart(2,'0');
